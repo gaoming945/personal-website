@@ -1,0 +1,177 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "China",
+        "ISO_A2": "CN"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              73.0,
+              18.0
+            ],
+            [
+              135.0,
+              18.0
+            ],
+            [
+              135.0,
+              54.0
+            ],
+            [
+              73.0,
+              54.0
+            ],
+            [
+              73.0,
+              18.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Japan",
+        "ISO_A2": "JP"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              129.5,
+              31.0
+            ],
+            [
+              145.5,
+              31.0
+            ],
+            [
+              145.5,
+              45.5
+            ],
+            [
+              129.5,
+              45.5
+            ],
+            [
+              129.5,
+              31.0
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Thailand",
+        "ISO_A2": "TH"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              97.5,
+              5.5
+            ],
+            [
+              105.5,
+              5.5
+            ],
+            [
+              105.5,
+              20.5
+            ],
+            [
+              97.5,
+              20.5
+            ],
+            [
+              97.5,
+              5.5
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Singapore",
+        "ISO_A2": "SG"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              103.6,
+              1.15
+            ],
+            [
+              104.1,
+              1.15
+            ],
+            [
+              104.1,
+              1.47
+            ],
+            [
+              103.6,
+              1.47
+            ],
+            [
+              103.6,
+              1.15
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Malaysia",
+        "ISO_A2": "MY"
+      },
+      "geometry": {
+        "type": "MultiPolygon",
+        "coordinates": [
+          [
+            [
+              [
+                99.6,
+                0.8
+              ],
+              [
+                119.2,
+                0.8
+              ],
+              [
+                119.2,
+                7.4
+              ],
+              [
+                99.6,
+                7.4
+              ],
+              [
+                99.6,
+                0.8
+              ]
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

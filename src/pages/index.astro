@@ -1,0 +1,430 @@
+---
+import '../styles/global.css';
+import PhotoGallery from '../components/PhotoGallery.tsx';
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="咸鸭蛋 的个人实验室，展示 Android、游戏系统、自动化、Docker 与数据产品项目。"
+    />
+    <title>咸鸭蛋 // 实验室</title>
+    <script>
+      (() => {
+        try {
+          const theme = window.localStorage.getItem('personal-website-theme');
+          if (theme === 'ocean' || theme === 'sunset') {
+            document.documentElement.dataset.theme = theme;
+          }
+        } catch {
+          document.documentElement.dataset.theme = 'lab';
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="scanline" aria-hidden="true"></div>
+
+    <nav class="navbar" aria-label="主导航">
+      <a class="nav-brand" href="#home" aria-label="咸鸭蛋 Lab">
+        <span data-i18n="brand">咸鸭蛋 // 实验室</span>
+      </a>
+      <div class="nav-links">
+        <a href="#home" data-i18n="nav.home">首页</a>
+        <a href="#travel" data-i18n="nav.travel">环球旅行</a>
+        <a href="#projects" data-i18n="nav.projects">项目</a>
+        <a href="#stack" data-i18n="nav.stack">健身成果</a>
+      </div>
+      <div class="nav-actions">
+        <div class="appearance-menu" data-appearance-menu>
+          <button class="appearance-trigger" type="button" data-appearance-trigger aria-label="外观设置" aria-expanded="false">
+            <span aria-hidden="true">⚙</span>
+          </button>
+          <div class="appearance-panel" data-appearance-panel>
+            <div class="appearance-group">
+              <span class="appearance-label" data-i18n="appearance.theme">皮肤</span>
+              <div class="theme-toggle" aria-label="皮肤切换">
+                <button class="is-active theme-option theme-option-lab" type="button" data-theme-switch="lab" title="实验室皮肤">
+                  <span class="theme-swatch theme-swatch-lab" aria-hidden="true"></span>
+                  <span>Lab</span>
+                </button>
+                <button class="theme-option theme-option-ocean" type="button" data-theme-switch="ocean" title="海岛皮肤">
+                  <span class="theme-swatch theme-swatch-ocean" aria-hidden="true"></span>
+                  <span>Sea</span>
+                </button>
+                <button class="theme-option theme-option-sunset" type="button" data-theme-switch="sunset" title="日落皮肤">
+                  <span class="theme-swatch theme-swatch-sunset" aria-hidden="true"></span>
+                  <span>Sun</span>
+                </button>
+              </div>
+            </div>
+            <div class="appearance-group">
+              <span class="appearance-label" data-i18n="appearance.language">语言</span>
+              <div class="language-toggle" aria-label="语言切换">
+                <button class="is-active" type="button" data-lang-switch="zh">中文</button>
+                <button type="button" data-lang-switch="en">EN</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="mobile-shell" aria-label="移动端控制台">
+      <section class="mobile-screen is-active" data-mobile-screen="home">
+        <div class="mobile-topbar">
+          <span class="mobile-brand" data-i18n="mobile.brand">MG 实验室</span>
+          <div class="mobile-controls">
+            <div class="appearance-menu mobile-appearance-menu" data-appearance-menu>
+              <button class="appearance-trigger" type="button" data-appearance-trigger aria-label="外观设置" aria-expanded="false">
+                <span aria-hidden="true">⚙</span>
+              </button>
+              <div class="appearance-panel" data-appearance-panel>
+                <div class="appearance-group">
+                  <span class="appearance-label" data-i18n="appearance.theme">皮肤</span>
+                  <div class="theme-toggle mobile-theme-toggle" aria-label="皮肤切换">
+                    <button class="is-active theme-option theme-option-lab" type="button" data-theme-switch="lab" title="实验室皮肤">
+                      <span class="theme-swatch theme-swatch-lab" aria-hidden="true"></span>
+                      <span>Lab</span>
+                    </button>
+                    <button class="theme-option theme-option-ocean" type="button" data-theme-switch="ocean" title="海岛皮肤">
+                      <span class="theme-swatch theme-swatch-ocean" aria-hidden="true"></span>
+                      <span>Sea</span>
+                    </button>
+                    <button class="theme-option theme-option-sunset" type="button" data-theme-switch="sunset" title="日落皮肤">
+                      <span class="theme-swatch theme-swatch-sunset" aria-hidden="true"></span>
+                      <span>Sun</span>
+                    </button>
+                  </div>
+                </div>
+                <div class="appearance-group">
+                  <span class="appearance-label" data-i18n="appearance.language">语言</span>
+                  <div class="language-toggle mobile-language-toggle" aria-label="语言切换">
+                    <button class="is-active" type="button" data-lang-switch="zh">中文</button>
+                    <button type="button" data-lang-switch="en">EN</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <span class="mobile-status" data-i18n="status.online">在线</span>
+        </div>
+        <div class="mobile-hero-card">
+          <p class="eyebrow">mobile://lab-console</p>
+          <h1 data-i18n="mobile.hero.title">极客实验台</h1>
+          <p data-i18n="mobile.hero.copy">快速查看项目、扫码安装 App、浏览技术栈。</p>
+          <div class="mobile-command">
+            <span>$</span>
+            <strong data-i18n="mobile.hero.command">点击底部导航切换模块</strong>
+          </div>
+        </div>
+        <div class="mobile-quick-grid">
+          <button type="button" data-mobile-target="apps">
+            <span>02</span>
+            <strong data-i18n="mobile.quick.apps">应用</strong>
+          </button>
+          <button type="button" data-mobile-target="stack">
+            <span>03</span>
+            <strong data-i18n="mobile.quick.stack">健身成果</strong>
+          </button>
+        </div>
+      </section>
+
+      <section class="mobile-screen" data-mobile-screen="apps">
+        <div class="mobile-section-title">
+          <p class="eyebrow">distribution</p>
+          <h2 data-i18n="mobile.apps.title">App 分发</h2>
+        </div>
+        <article class="mobile-app-card">
+          <div>
+            <span class="status-chip">Android</span>
+            <h3>格阵</h3>
+            <p data-i18n="project.grid.copy.short">格子解谜游戏，融合推箱子与磁力箱机制。</p>
+          </div>
+          <img src="/assets/qrcodes/grid.png" alt="格阵 App 分发二维码" width="132" height="132" />
+        </article>
+        <article class="mobile-app-card">
+          <div>
+            <span class="status-chip">Game</span>
+            <h3>星穹防线</h3>
+            <p data-i18n="project.defense.copy.short">Cocos Creator 纵版空战射击游戏。</p>
+          </div>
+          <img src="/assets/qrcodes/starfrontier.png" alt="星穹防线 App 分发二维码" width="132" height="132" />
+        </article>
+      </section>
+
+      <section class="mobile-screen" data-mobile-screen="stack">
+        <div class="mobile-section-title">
+          <p class="eyebrow">toolchain</p>
+          <h2 data-i18n="nav.stack">技术栈</h2>
+        </div>
+        <div class="mobile-stack-list">
+          <div><span>Kotlin</span><strong data-i18n="stack.mobile">Android 运行时</strong></div>
+          <div><span>TypeScript</span><strong data-i18n="stack.game">游戏系统</strong></div>
+          <div><span>Python</span><strong data-i18n="stack.data">数据自动化</strong></div>
+          <div><span>Docker</span><strong data-i18n="stack.ops">自托管运维</strong></div>
+        </div>
+      </section>
+
+      <section class="mobile-screen" data-mobile-screen="ops">
+        <div class="mobile-section-title">
+          <p class="eyebrow">telemetry</p>
+          <h2 data-i18n="mobile.ops.title">运行状态</h2>
+        </div>
+        <div class="mobile-log-panel">
+          <p><span>$</span> mode</p>
+          <strong data-i18n="ops.mode.copy.short">交付实用作品</strong>
+          <p><span>$</span> bias</p>
+          <strong data-i18n="ops.bias.copy.short">系统、工具、自动化</strong>
+          <p><span>$</span> runtime</p>
+          <strong data-i18n="ops.runtime.copy.short">自托管 Linux 上的 Docker</strong>
+        </div>
+      </section>
+
+      <nav class="mobile-dock" aria-label="移动端导航">
+        <button class="is-active" type="button" data-mobile-target="home" data-i18n="mobile.nav.home">首页</button>
+        <button type="button" data-mobile-target="apps" data-i18n="mobile.nav.travel">旅行</button>
+        <button type="button" data-mobile-target="stack" data-i18n="nav.projects">项目</button>
+      </nav>
+    </main>
+
+    <main class="desktop-main">
+      <section id="home" class="hero">
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <div class="hero-status-row" aria-label="当前状态">
+              <span data-i18n="hero.status.building">BUILDING</span>
+              <span data-i18n="hero.status.traveling">TRAVELING</span>
+              <span data-i18n="hero.status.training">TRAINING</span>
+            </div>
+            <p class="eyebrow">root@lab:~$ ./profile --mode=builder</p>
+            <h1 data-i18n="hero.title">你觉得我在上班</h1>
+            <p class="tagline" data-i18n="hero.tagline">
+              - 其实我在规划下一站机票<br>
+              <br>
+              主业：探索世界<br>
+              副业：Java开发<br>
+              爱好：编程、健身、环球旅行<br>
+              <br>
+              🎯 目标：打卡100个国家，目前进度 13/100，下一站西班牙🇪🇸。
+            </p>
+            <p class="hero-summary" data-i18n="hero.summary">这里记录我正在交付的编程作品、旅行地图和健身进度：一个偏实用、偏长期主义的个人实验室。</p>
+            <div class="hero-signal-list" aria-label="个人主页信号">
+              <div>
+                <span>01</span>
+                <strong data-i18n="hero.signal.ship">能打开、能部署、能反复使用</strong>
+              </div>
+              <div>
+                <span>02</span>
+                <strong data-i18n="hero.signal.map">用地图记录路线，用作品记录能力</strong>
+              </div>
+            </div>
+            <div class="hero-proof" aria-label="个人主页概览">
+              <div>
+                <strong>13/100</strong>
+                <span data-i18n="hero.proof.travel">国家进度</span>
+              </div>
+              <div>
+                <strong>3</strong>
+                <span data-i18n="hero.proof.projects">公开项目</span>
+              </div>
+              <div>
+                <strong>24/7</strong>
+                <span data-i18n="hero.proof.runtime">自托管运行</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="terminal-panel" aria-label="系统摘要">
+            <div class="terminal-bar">
+              <span></span>
+              <span></span>
+              <span></span>
+              <strong>session.log</strong>
+            </div>
+            <div class="terminal-body">
+              <p><span class="prompt">$</span> whoami</p>
+              <p class="output" data-i18n="terminal.whoami">咸鸭蛋 / 世界探索者</p>
+              <p><span class="prompt">$</span> current_status</p>
+              <ul class="terminal-list">
+                <li data-i18n="terminal.status.work">&gt; 工作中</li>
+                <li data-i18n="terminal.status.fake">&gt; 假装认真上班</li>
+              </ul>
+              <p><span class="prompt">$</span> actual_mission</p>
+              <ul class="terminal-list">
+                <li data-i18n="terminal.mission.countries">&gt; 收集100个国家</li>
+                <li data-i18n="terminal.mission.health">&gt; 保持健康</li>
+                <li data-i18n="terminal.mission.growth">&gt; 持续增值</li>
+              </ul>
+              <p><span class="prompt">$</span> progress</p>
+              <p class="output" data-i18n="terminal.progress">13 / 100 已解锁</p>
+              <p class="output" data-i18n="terminal.next">next: Spain 🇪🇸</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="updates" aria-label="最近更新">
+        <div class="updates-grid">
+          <div class="updates-heading">
+            <p class="eyebrow">Latest Signals</p>
+            <h2 data-i18n="updates.title">最近更新</h2>
+          </div>
+          <article class="update-item">
+            <span data-i18n="updates.travel.label">最近旅行</span>
+            <strong data-i18n="updates.travel.title">巴厘岛已加入地图</strong>
+            <p data-i18n="updates.travel.copy">旅行进度更新到 13 / 100，东南亚路线继续扩展。</p>
+          </article>
+          <article class="update-item">
+            <span data-i18n="updates.site.label">网站更新</span>
+            <strong data-i18n="updates.site.title">地球新增国家高亮</strong>
+            <p data-i18n="updates.site.copy">去过的国家会在地球上高亮显示，多次访问只亮一次。</p>
+          </article>
+          <article class="update-item">
+            <span data-i18n="updates.next.label">下一站</span>
+            <strong data-i18n="updates.next.title">西班牙 🇪🇸</strong>
+            <p data-i18n="updates.next.copy">继续补全欧洲地图，也顺手收集新的项目灵感。</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- 环球旅行 -->
+      <section id="travel" class="travel">
+        <div class="section-heading travel-heading">
+          <div>
+            <p class="eyebrow">Atlas Runtime</p>
+            <h2 data-travel-headline data-i18n="travel.title"><span class="travel-icon">🌍</span> 环球旅行 · 100 个国家&地区</h2>
+            <p class="travel-progress" data-travel-progress data-i18n="travel.progress">已打卡 13 / 100，下一站西班牙🇪🇸。</p>
+            <p class="section-copy" data-i18n="travel.copy">用地球和时间轴记录路线，不做流水账，只留下目的地、照片和当时的判断。</p>
+          </div>
+        </div>
+        <div class="travel-console">
+          <div class="globe-panel">
+            <div class="globe-stage" data-travel-globe aria-label="可拖动的 3D 旅行地球"></div>
+          </div>
+          <aside class="travel-detail" data-travel-detail>
+            <div class="travel-empty-state" data-i18n="travel.empty.short">点击时间轴或地球查看旅程</div>
+          </aside>
+        </div>
+        <div class="timeline-shell">
+          <div class="travel-timeline" data-travel-timeline></div>
+        </div>
+      </section>
+
+      <section id="projects" class="projects">
+        <div class="section-heading">
+          <p class="eyebrow">Repository Matrix</p>
+          <h2 data-i18n="projects.title">编程作品</h2>
+          <p class="section-copy" data-i18n="projects.copy">我更偏向做能被真实打开、部署、扫码或反复使用的小作品，而不是只停留在仓库里的 demo。</p>
+        </div>
+
+        <div class="project-filters" aria-label="项目过滤">
+          <button class="filter-button is-active" type="button" data-filter="all" data-i18n="filter.all">全部</button>
+          <button class="filter-button" type="button" data-filter="mobile" data-i18n="filter.mobile">移动端</button>
+          <button class="filter-button" type="button" data-filter="game" data-i18n="filter.game">游戏</button>
+          <button class="filter-button" type="button" data-filter="data" data-i18n="filter.data">数据</button>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card" data-category="mobile game">
+            <div class="card-topline">
+              <span class="node-id">01</span>
+              <span class="status-chip">Android</span>
+            </div>
+            <div class="project-card-header">
+              <span class="project-kicker" data-i18n="project.grid.kicker">移动端游戏</span>
+              <span class="project-state" data-i18n="project.state.shipped">已发布</span>
+            </div>
+            <h3>Grid</h3>
+            <p data-i18n="project.grid.copy">格子解谜游戏，融合推箱子与磁力箱机制，用 Compose 做出清晰的移动端交互。</p>
+            <div class="project-tags">
+              <span>Kotlin</span>
+              <span>Jetpack Compose</span>
+              <span>Android</span>
+            </div>
+            <div class="distribution-panel">
+              <div>
+                <span class="distribution-label" data-i18n="distribution.label">App 分发</span>
+                <strong>格阵</strong>
+              </div>
+              <img src="/assets/qrcodes/grid.png" alt="格阵 App 分发二维码" width="120" height="120" />
+            </div>
+            <a href="https://github.com/gaoming945/Grid" target="_blank" rel="noreferrer" class="project-link" data-i18n="project.link">打开仓库</a>
+          </article>
+
+          <article class="project-card" data-category="game">
+            <div class="card-topline">
+              <span class="node-id">02</span>
+              <span class="status-chip">Game</span>
+            </div>
+            <div class="project-card-header">
+              <span class="project-kicker" data-i18n="project.defense.kicker">玩法原型</span>
+              <span class="project-state" data-i18n="project.state.playable">可试玩</span>
+            </div>
+            <h3>Defense Survivor</h3>
+            <p data-i18n="project.defense.copy">Cocos Creator 纵版空战射击游戏，关注节奏、弹幕密度和成长反馈。</p>
+            <div class="project-tags">
+              <span>TypeScript</span>
+              <span>Cocos Creator</span>
+              <span>Gameplay</span>
+            </div>
+            <div class="distribution-panel">
+              <div>
+                <span class="distribution-label" data-i18n="distribution.label">App 分发</span>
+                <strong>星穹防线</strong>
+              </div>
+              <img src="/assets/qrcodes/starfrontier.png" alt="星穹防线 App 分发二维码" width="120" height="120" />
+            </div>
+            <a href="https://github.com/gaoming945/DefenseSurvivor" target="_blank" rel="noreferrer" class="project-link" data-i18n="project.link">打开仓库</a>
+          </article>
+
+          <article class="project-card" data-category="data">
+            <div class="card-topline">
+              <span class="node-id">03</span>
+              <span class="status-chip">Risk</span>
+            </div>
+            <div class="project-card-header">
+              <span class="project-kicker" data-i18n="project.market.kicker">数据工具</span>
+              <span class="project-state" data-i18n="project.state.live">在线运行</span>
+            </div>
+            <h3>Market Watch Streamlit</h3>
+            <p data-i18n="project.market.copy">美股跨资产宏观风控引擎，把监控、信号和风险状态组织成可操作视图。</p>
+            <div class="project-tags">
+              <span>Python</span>
+              <span>Streamlit</span>
+              <span>Finance</span>
+            </div>
+            <div class="project-links">
+              <a href="https://github.com/gaoming945/market_watch_streamlit" target="_blank" rel="noreferrer" class="project-link" data-i18n="project.link">打开仓库</a>
+              <a href="http://yadan.duckdns.org:8501/" target="_blank" rel="noreferrer" class="project-link project-link-website" data-i18n="project.link.website">打开网站</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="stack" class="stack fitness-gallery">
+        <div class="section-heading">
+          <p class="eyebrow">Fitness</p>
+          <h2 data-i18n="stack.title">健身成果</h2>
+        </div>
+        <PhotoGallery client:only="react" />
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p data-i18n="footer">基于 Astro 构建 · 容器化部署 · 持续迭代中</p>
+    </footer>
+
+    <script src="../scripts/main.tsx"></script>
+  </body>
+</html>

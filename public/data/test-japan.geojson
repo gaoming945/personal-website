@@ -1,0 +1,1 @@
+{"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"name": "Japan", "ISO_A2": "JP"}, "geometry": {"type": "Polygon", "coordinates": [[[129.5, 31.0], [145.5, 31.0], [145.5, 45.5], [129.5, 45.5], [129.5, 31.0]]]}}]}

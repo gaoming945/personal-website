@@ -1,0 +1,38 @@
+[
+  {
+    "src": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800",
+    "alt": "Gym workout",
+    "width": 800,
+    "height": 600
+  },
+  {
+    "src": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800",
+    "alt": "Running",
+    "width": 600,
+    "height": 800
+  },
+  {
+    "src": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800",
+    "alt": "Weight lifting",
+    "width": 800,
+    "height": 800
+  },
+  {
+    "src": "https://images.unsplash.com/photo-1576678927484-cc907957088c?w=800",
+    "alt": "Yoga",
+    "width": 600,
+    "height": 800
+  },
+  {
+    "src": "https://images.unsplash.com/photo-1550345332-09e3ac987658?w=800",
+    "alt": "Cycling",
+    "width": 800,
+    "height": 600
+  },
+  {
+    "src": "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=800",
+    "alt": "Swimming",
+    "width": 800,
+    "height": 600
+  }
+]
