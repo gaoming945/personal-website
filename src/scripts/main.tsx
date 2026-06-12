@@ -1257,6 +1257,13 @@ function switchLanguage(lang: Language) {
     }
   });
 
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (key && translations[lang][key] && el instanceof HTMLTextAreaElement) {
+      el.placeholder = translations[lang][key];
+    }
+  });
+
   // Update language button active state
   document.querySelectorAll('[data-lang-switch]').forEach(btn => {
     btn.classList.toggle('is-active', btn.getAttribute('data-lang-switch') === lang);
@@ -1390,6 +1397,260 @@ function initActiveNavigation() {
   window.addEventListener('resize', requestUpdate);
 }
 
+function initAiChat() {
+  const root = document.querySelector('[data-ai-chat]') as HTMLElement | null;
+  const trigger = document.querySelector('[data-ai-chat-trigger]') as HTMLButtonElement | null;
+  const panel = document.querySelector('[data-ai-chat-panel]') as HTMLElement | null;
+  const closeButton = document.querySelector('[data-ai-chat-close]') as HTMLButtonElement | null;
+  const form = document.querySelector('[data-ai-chat-form]') as HTMLFormElement | null;
+  const input = document.querySelector('[data-ai-chat-input]') as HTMLTextAreaElement | null;
+  const submit = document.querySelector('[data-ai-chat-submit]') as HTMLButtonElement | null;
+  const messages = document.querySelector('[data-ai-chat-messages]') as HTMLElement | null;
+
+  if (!root || !trigger || !panel || !form || !input || !submit || !messages) return;
+
+  const setOpen = (open: boolean) => {
+    root.classList.toggle('is-open', open);
+    trigger.setAttribute('aria-expanded', String(open));
+    panel.setAttribute('aria-hidden', String(!open));
+    if (open) {
+      window.setTimeout(() => input.focus(), 120);
+    }
+  };
+
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+
+  const renderInlineMarkdown = (value: string) => {
+    let output = escapeHtml(value);
+    output = output.replace(/`([^`]+)`/g, '<code>$1</code>');
+    output = output.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    output = output.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    return output;
+  };
+
+  const isMarkdownTableDivider = (line: string) =>
+    /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
+
+  const splitMarkdownTableRow = (line: string) =>
+    line
+      .trim()
+      .replace(/^\|/, '')
+      .replace(/\|$/, '')
+      .split('|')
+      .map(cell => cell.trim());
+
+  const renderMarkdown = (value: string) => {
+    const normalized = value.replace(/\r\n/g, '\n').trim();
+    if (!normalized) return '';
+
+    const lines = normalized.split('\n');
+    const blocks: string[] = [];
+
+    for (let index = 0; index < lines.length;) {
+      const line = lines[index];
+      const nextLine = lines[index + 1];
+
+      if (!line.trim()) {
+        index += 1;
+        continue;
+      }
+
+      if (line.includes('|') && nextLine && isMarkdownTableDivider(nextLine)) {
+        const headers = splitMarkdownTableRow(line);
+        const rows: string[][] = [];
+        index += 2;
+        while (index < lines.length && lines[index].includes('|') && lines[index].trim()) {
+          rows.push(splitMarkdownTableRow(lines[index]));
+          index += 1;
+        }
+
+        const head = headers.map(header => `<th>${renderInlineMarkdown(header)}</th>`).join('');
+        const body = rows
+          .map(row => `<tr>${headers.map((_, cellIndex) => `<td>${renderInlineMarkdown(row[cellIndex] || '')}</td>`).join('')}</tr>`)
+          .join('');
+        blocks.push(`<div class="ai-markdown-table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
+        continue;
+      }
+
+      if (/^\s*[-*]\s+/.test(line)) {
+        const items: string[] = [];
+        while (index < lines.length && /^\s*[-*]\s+/.test(lines[index])) {
+          items.push(`<li>${renderInlineMarkdown(lines[index].replace(/^\s*[-*]\s+/, ''))}</li>`);
+          index += 1;
+        }
+        blocks.push(`<ul>${items.join('')}</ul>`);
+        continue;
+      }
+
+      if (/^\s*\d+\.\s+/.test(line)) {
+        const items: string[] = [];
+        while (index < lines.length && /^\s*\d+\.\s+/.test(lines[index])) {
+          items.push(`<li>${renderInlineMarkdown(lines[index].replace(/^\s*\d+\.\s+/, ''))}</li>`);
+          index += 1;
+        }
+        blocks.push(`<ol>${items.join('')}</ol>`);
+        continue;
+      }
+
+      const paragraphLines: string[] = [];
+      while (
+        index < lines.length &&
+        lines[index].trim() &&
+        !(lines[index].includes('|') && lines[index + 1] && isMarkdownTableDivider(lines[index + 1])) &&
+        !/^\s*[-*]\s+/.test(lines[index]) &&
+        !/^\s*\d+\.\s+/.test(lines[index])
+      ) {
+        paragraphLines.push(lines[index]);
+        index += 1;
+      }
+      blocks.push(`<p>${paragraphLines.map(renderInlineMarkdown).join('<br>')}</p>`);
+    }
+
+    return blocks.join('');
+  };
+
+  const setMessageMarkdown = (article: HTMLElement, text: string) => {
+    const body = article.querySelector('[data-ai-message-body]') as HTMLElement | null;
+    if (!body) return;
+    body.innerHTML = renderMarkdown(text);
+  };
+
+  const appendMessage = (role: 'user' | 'assistant' | 'error', text: string) => {
+    const article = document.createElement('article');
+    article.className = `ai-message ${role === 'user' ? 'ai-message-user' : 'ai-message-assistant'}${role === 'error' ? ' ai-message-error' : ''}`;
+    const body = document.createElement('div');
+    body.className = 'ai-message-body';
+    body.dataset.aiMessageBody = '';
+    article.appendChild(body);
+    messages.appendChild(article);
+    setMessageMarkdown(article, text);
+    messages.scrollTop = messages.scrollHeight;
+    return article;
+  };
+
+  const resizeInput = () => {
+    input.style.height = 'auto';
+    input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
+  };
+
+  const chatEndpoints = () => {
+    const endpoints = ['/api/chat'];
+    if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+      endpoints.push('http://localhost:8787/api/chat');
+    }
+    return endpoints;
+  };
+
+  const ask = async (rawQuestion: string) => {
+    const question = rawQuestion.trim();
+    if (!question) return;
+
+    appendMessage('user', question);
+    input.value = '';
+    resizeInput();
+    submit.disabled = true;
+
+    const pending = appendMessage('assistant', t('ai.thinking'));
+    pending.classList.add('is-streaming');
+
+    try {
+      let response: Response | null = null;
+      let lastError: unknown = null;
+      const body = JSON.stringify({
+        message: question,
+        language: currentLanguage,
+      });
+
+      for (const endpoint of chatEndpoints()) {
+        try {
+          response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+          });
+          if (response.ok) break;
+          lastError = new Error(`AI request failed: ${response.status}`);
+        } catch (error) {
+          lastError = error;
+        }
+      }
+
+      if (!response?.ok) {
+        throw lastError || new Error('AI request failed');
+      }
+
+      const pendingText = pending.querySelector('[data-ai-message-body]') as HTMLElement;
+      const contentType = response.headers.get('Content-Type') || '';
+
+      if (contentType.includes('application/json')) {
+        const data = await response.json();
+        setMessageMarkdown(pending, typeof data.reply === 'string' ? data.reply : t('ai.error'));
+      } else if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let streamedText = '';
+        pendingText.innerHTML = '';
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          streamedText += decoder.decode(value, { stream: true });
+          setMessageMarkdown(pending, streamedText);
+          messages.scrollTop = messages.scrollHeight;
+        }
+
+        streamedText += decoder.decode();
+        setMessageMarkdown(pending, streamedText || t('ai.error'));
+      } else {
+        setMessageMarkdown(pending, await response.text());
+      }
+    } catch {
+      pending.classList.add('ai-message-error');
+      setMessageMarkdown(pending, t('ai.error'));
+    } finally {
+      pending.classList.remove('is-streaming');
+      submit.disabled = false;
+      messages.scrollTop = messages.scrollHeight;
+    }
+  };
+
+  trigger.addEventListener('click', () => setOpen(!root.classList.contains('is-open')));
+  closeButton?.addEventListener('click', () => setOpen(false));
+
+  input.addEventListener('input', resizeInput);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      form.requestSubmit();
+    }
+  });
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    ask(input.value);
+  });
+
+  document.querySelectorAll('[data-ai-question]').forEach(button => {
+    button.addEventListener('click', () => {
+      const question = (button as HTMLElement).innerText || button.getAttribute('data-ai-question') || '';
+      setOpen(true);
+      ask(question);
+    });
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && root.classList.contains('is-open')) {
+      setOpen(false);
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   currentLanguage = getStoredLanguage();
   await initGlobe();
@@ -1402,4 +1663,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   initThemeToggle();
   initLanguageToggle();
   initActiveNavigation();
+  initAiChat();
 });

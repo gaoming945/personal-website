@@ -1,7 +1,11 @@
-# Caddyfile for personal website - forward to soft router Docker
+:80 {
+    handle /api/* {
+        reverse_proxy ai-api:8787
+    }
 
-http://yadan.duckdns.org, http://www.yadan.duckdns.org {
-    reverse_proxy 192.168.100.1:8080
+    handle {
+        reverse_proxy personal-website:80
+    }
 
     log {
         output file /data/logs/access.log {

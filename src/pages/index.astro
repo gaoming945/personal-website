@@ -80,6 +80,16 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
       </div>
     </nav>
 
+    <aside class="site-announcement" aria-label="通告">
+      <div class="announcement-inner">
+        <span data-i18n="announcement.label">通告</span>
+        <div class="announcement-marquee" aria-live="polite">
+          <p data-i18n="announcement.copy">下一站西班牙 · 继续补欧洲地图 · 最近在整理旅行照片和编程作品</p>
+          <p data-i18n="announcement.copy" aria-hidden="true">下一站西班牙 · 继续补欧洲地图 · 最近在整理旅行照片和编程作品</p>
+        </div>
+      </div>
+    </aside>
+
     <main class="mobile-shell" aria-label="移动端控制台">
       <section class="mobile-screen is-active" data-mobile-screen="home">
         <div class="mobile-topbar">
@@ -274,30 +284,6 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
         </div>
       </section>
 
-      <section class="updates" aria-label="最近更新">
-        <div class="updates-grid">
-          <div class="updates-heading">
-            <p class="eyebrow">Latest Signals</p>
-            <h2 data-i18n="updates.title">最近更新</h2>
-          </div>
-          <article class="update-item">
-            <span data-i18n="updates.travel.label">最近旅行</span>
-            <strong data-i18n="updates.travel.title">巴厘岛已加入地图</strong>
-            <p data-i18n="updates.travel.copy">旅行进度更新到 13 / 100，东南亚路线继续扩展。</p>
-          </article>
-          <article class="update-item">
-            <span data-i18n="updates.site.label">网站更新</span>
-            <strong data-i18n="updates.site.title">地球新增国家高亮</strong>
-            <p data-i18n="updates.site.copy">去过的国家会在地球上高亮显示，多次访问只亮一次。</p>
-          </article>
-          <article class="update-item">
-            <span data-i18n="updates.next.label">下一站</span>
-            <strong data-i18n="updates.next.title">西班牙 🇪🇸</strong>
-            <p data-i18n="updates.next.copy">继续补全欧洲地图，也顺手收集新的项目灵感。</p>
-          </article>
-        </div>
-      </section>
-
       <!-- 环球旅行 -->
       <section id="travel" class="travel">
         <div class="section-heading travel-heading">
@@ -424,6 +410,42 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
     <footer class="footer">
       <p data-i18n="footer">基于 Astro 构建 · 容器化部署 · 持续迭代中</p>
     </footer>
+
+    <section class="ai-chat" data-ai-chat aria-label="AI 聊天助手">
+      <button class="ai-chat-trigger" type="button" data-ai-chat-trigger aria-expanded="false" aria-label="打开 AI 聊天">
+        <span class="ai-chat-trigger-mark" aria-hidden="true">AI</span>
+        <span data-i18n="ai.trigger">问问咸鸭蛋</span>
+      </button>
+
+      <div class="ai-chat-panel" data-ai-chat-panel aria-hidden="true">
+        <div class="ai-chat-header">
+          <div>
+            <span class="ai-chat-kicker" data-i18n="ai.kicker">Lab Assistant</span>
+            <h2 data-i18n="ai.title">问问咸鸭蛋</h2>
+          </div>
+          <button class="ai-chat-close" type="button" data-ai-chat-close aria-label="关闭 AI 聊天">×</button>
+        </div>
+
+        <div class="ai-chat-messages" data-ai-chat-messages>
+          <article class="ai-message ai-message-assistant">
+            <p data-i18n="ai.welcome">你好，我可以介绍这个个人网站、旅行计划、编程作品和健身内容。可以问我：下一站去哪？做过哪些项目？</p>
+          </article>
+        </div>
+
+        <div class="ai-chat-suggestions" aria-label="快捷问题">
+          <button type="button" data-ai-question="下一站去哪里？" data-i18n="ai.suggestion.travel">下一站去哪里？</button>
+          <button type="button" data-ai-question="介绍一下你的编程作品" data-i18n="ai.suggestion.projects">介绍一下编程作品</button>
+          <button type="button" data-ai-question="这个网站有什么内容？" data-i18n="ai.suggestion.site">网站有什么内容？</button>
+        </div>
+
+        <form class="ai-chat-form" data-ai-chat-form>
+          <label class="sr-only" for="ai-chat-input" data-i18n="ai.input.label">输入问题</label>
+          <textarea id="ai-chat-input" data-ai-chat-input rows="1" maxlength="600" placeholder="问我关于旅行、项目或这个网站..." data-i18n-placeholder="ai.placeholder"></textarea>
+          <button type="submit" data-ai-chat-submit data-i18n="ai.send">发送</button>
+        </form>
+        <p class="ai-chat-note" data-i18n="ai.note">AI 可能会出错，关键行程和项目请以页面内容为准。</p>
+      </div>
+    </section>
 
     <script src="../scripts/main.tsx"></script>
   </body>

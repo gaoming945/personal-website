@@ -8,6 +8,21 @@ services:
     networks:
       - web
 
+  ai-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: personal-website-ai
+    environment:
+      ANTHROPIC_AUTH_TOKEN: ${ANTHROPIC_AUTH_TOKEN:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.longcat.chat/anthropic}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-LongCat-2.0-Preview}
+    expose:
+      - "8787"
+    restart: unless-stopped
+    networks:
+      - web
+
   caddy:
     image: caddy:2-alpine
     container_name: caddy
@@ -20,6 +35,9 @@ services:
     restart: unless-stopped
     networks:
       - web
+    depends_on:
+      - website
+      - ai-api
 
 networks:
   web:
