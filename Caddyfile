@@ -3,6 +3,10 @@
         reverse_proxy ai-api:8787
     }
 
+    handle /v1/* {
+        reverse_proxy ai-api:8787
+    }
+
     handle {
         reverse_proxy personal-website:80
     }

@@ -1713,6 +1713,73 @@ function initAiChat() {
   });
 }
 
+function initGatewayPanel() {
+  const form = document.querySelector('[data-gateway-form]') as HTMLFormElement | null;
+  const submit = document.querySelector('[data-gateway-submit]') as HTMLButtonElement | null;
+  const status = document.querySelector('[data-gateway-status]') as HTMLElement | null;
+  const result = document.querySelector('[data-gateway-result]') as HTMLElement | null;
+  const keyOutput = document.querySelector('[data-gateway-key]') as HTMLElement | null;
+  const copyButton = document.querySelector('[data-gateway-copy]') as HTMLButtonElement | null;
+
+  if (!form || !submit || !status || !result || !keyOutput || !copyButton) return;
+
+  let issuedKey = '';
+
+  const setStatus = (message: string, isError = false) => {
+    status.textContent = message;
+    status.classList.toggle('is-error', isError);
+  };
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const inviteCode = String(formData.get('inviteCode') || '').trim();
+    const label = String(formData.get('label') || '').trim();
+
+    if (!inviteCode) {
+      setStatus('请输入邀请码。', true);
+      return;
+    }
+
+    submit.disabled = true;
+    setStatus('正在兑换...');
+    result.hidden = true;
+    issuedKey = '';
+
+    try {
+      const response = await fetch('/api/gateway/redeem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inviteCode, label }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || '兑换失败');
+      }
+
+      issuedKey = payload.apiKey;
+      keyOutput.textContent = issuedKey;
+      result.hidden = false;
+      form.reset();
+      setStatus(`兑换成功。今日额度：${payload.key.dailyRequests} 次 / ${payload.key.dailyTokens} tokens。`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : '兑换失败', true);
+    } finally {
+      submit.disabled = false;
+    }
+  });
+
+  copyButton.addEventListener('click', async () => {
+    if (!issuedKey) return;
+    try {
+      await navigator.clipboard.writeText(issuedKey);
+      setStatus('Key 已复制。注意：页面刷新后不会再显示。');
+    } catch {
+      setStatus('复制失败，请手动复制。', true);
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   currentLanguage = getStoredLanguage();
   initTimeline();
@@ -1725,5 +1792,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initLanguageToggle();
   initActiveNavigation();
   initAiChat();
+  initGatewayPanel();
   initGlobeWhenVisible();
 });

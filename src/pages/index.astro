@@ -399,6 +399,47 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
         </div>
       </section>
 
+      <section id="gateway" class="gateway">
+        <div class="section-heading">
+          <p class="eyebrow">AI Gateway</p>
+          <h2>邀请制 AI 中转</h2>
+          <p class="section-copy">用邀请码开通个人 Key，兼容 OpenAI Chat Completions，后端统一走 LongCat。</p>
+        </div>
+        <div class="gateway-panel" data-gateway-panel>
+          <div class="gateway-copy">
+            <span class="project-kicker">Invite only</span>
+            <h3>LongCat Gateway</h3>
+            <p>适合接入 Cherry Studio、NextChat、LobeChat 或 OpenAI SDK。Key 只显示一次，请自己保存。</p>
+            <div class="gateway-endpoints">
+              <code>Base URL: https://yadan.duckdns.org:18080/v1</code>
+              <code>POST /v1/chat/completions</code>
+              <code>GET /v1/models</code>
+            </div>
+          </div>
+          <form class="gateway-form" data-gateway-form>
+            <label>
+              <span>邀请码</span>
+              <input type="text" name="inviteCode" autocomplete="off" placeholder="invite_xxx" required />
+            </label>
+            <label>
+              <span>备注</span>
+              <input type="text" name="label" maxlength="80" placeholder="例如：自己的 Mac / 朋友 A" />
+            </label>
+            <button type="submit" data-gateway-submit>兑换 Key</button>
+            <p class="gateway-status" data-gateway-status>邀请制开放，Key 有每日额度和请求频率限制。</p>
+          </form>
+          <div class="gateway-result" data-gateway-result hidden>
+            <span class="project-kicker">API Key</span>
+            <pre><code data-gateway-key></code></pre>
+            <button type="button" data-gateway-copy>复制 Key</button>
+            <pre><code>{`curl https://yadan.duckdns.org:18080/v1/chat/completions \
+  -H "Authorization: Bearer YOUR_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"LongCat-2.0-Preview","messages":[{"role":"user","content":"你好"}]}'`}</code></pre>
+          </div>
+        </div>
+      </section>
+
       <section id="stack" class="stack fitness-gallery">
         <div class="section-heading">
           <p class="eyebrow">Fitness</p>

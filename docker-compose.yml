@@ -19,6 +19,8 @@ services:
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-LongCat-2.0-Preview}
     expose:
       - "8787"
+    volumes:
+      - ai_gateway_data:/data
     restart: unless-stopped
     networks:
       - web
@@ -46,3 +48,4 @@ networks:
 volumes:
   caddy_data:
   caddy_config:
+  ai_gateway_data:
