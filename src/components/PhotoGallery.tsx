@@ -8,6 +8,14 @@ interface Photo {
   height: number;
 }
 
+interface FitnessRecord {
+  title: string;
+  image: string;
+  width?: number;
+  height?: number;
+  visible?: boolean;
+}
+
 interface PhotoTileProps {
   photo: Photo;
   index: number;
@@ -51,13 +59,28 @@ export default function PhotoGallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/photos.json')
+    fetch('/api/public/content')
       .then(res => res.json())
       .then(data => {
-        setPhotos(data);
+        const managedPhotos = Array.isArray(data.fitness)
+          ? data.fitness
+              .filter((item: FitnessRecord) => item.visible !== false && item.image)
+              .map((item: FitnessRecord) => ({
+                src: item.image,
+                alt: item.title,
+                width: item.width || 800,
+                height: item.height || 600,
+              }))
+          : [];
+        setPhotos(managedPhotos);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        fetch('/photos.json')
+          .then(res => res.json())
+          .then(data => setPhotos(data))
+          .finally(() => setLoading(false));
+      });
   }, []);
 
   if (loading) {

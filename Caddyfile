@@ -1,4 +1,12 @@
 :80 {
+    handle /admin* {
+        reverse_proxy ai-api:8787
+    }
+
+    handle /uploads/* {
+        reverse_proxy ai-api:8787
+    }
+
     handle /api/* {
         reverse_proxy ai-api:8787
     }

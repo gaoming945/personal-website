@@ -1,7 +1,11 @@
 import http from 'node:http';
-import { existsSync, readFileSync } from 'node:fs';
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs';
+import { basename, extname, join, normalize } from 'node:path';
 import { buildSiteContext } from './site-context.mjs';
 import { GatewayStore, extractBearerToken } from './gateway-store.mjs';
+import { ContentStore } from './content-store.mjs';
+import { AdminAuth } from './admin-auth.mjs';
+import { renderAdminPage, renderLoginPage } from './admin-page.mjs';
 import {
   anthropicMessagesEndpoint,
   estimateTokens,
@@ -41,9 +45,13 @@ const GATEWAY_ADMIN_TOKEN = process.env.GATEWAY_ADMIN_TOKEN || '';
 const GATEWAY_DATA_DIR = process.env.GATEWAY_DATA_DIR || '/data';
 const GATEWAY_MAX_BODY_BYTES = Number(process.env.GATEWAY_MAX_BODY_BYTES || 64 * 1024);
 const GATEWAY_MAX_TOKENS = Number(process.env.GATEWAY_MAX_TOKENS || 2000);
+const UPLOAD_ROOT = process.env.UPLOAD_ROOT || `${GATEWAY_DATA_DIR}/uploads`;
+const ADMIN_MAX_BODY_BYTES = Number(process.env.ADMIN_MAX_BODY_BYTES || 8 * 1024 * 1024);
 
 const rateLimitStore = new Map();
 const gatewayStore = new GatewayStore({ dataDir: GATEWAY_DATA_DIR });
+const contentStore = new ContentStore({ dataDir: GATEWAY_DATA_DIR, uploadRoot: UPLOAD_ROOT });
+const adminAuth = new AdminAuth();
 
 const siteContext = buildSiteContext();
 
@@ -58,6 +66,23 @@ function sendJson(response, statusCode, payload) {
   response.end(JSON.stringify(payload));
 }
 
+function sendHtml(response, statusCode, html, headers = {}) {
+  response.writeHead(statusCode, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Cache-Control': 'no-store',
+    ...headers,
+  });
+  response.end(html);
+}
+
+function redirect(response, location) {
+  response.writeHead(302, {
+    Location: location,
+    'Cache-Control': 'no-store',
+  });
+  response.end();
+}
+
 function readBody(request, limitBytes = 4096) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -69,6 +94,49 @@ function readBody(request, limitBytes = 4096) {
       }
     });
     request.on('end', () => resolve(body));
+    request.on('error', reject);
+  });
+}
+
+function parseMultipart(request, bodyBuffer) {
+  const contentType = request.headers['content-type'] || '';
+  const boundaryMatch = /boundary=([^;]+)/i.exec(contentType);
+  if (!boundaryMatch) throw new Error('Missing multipart boundary');
+  const boundary = `--${boundaryMatch[1]}`;
+  const body = bodyBuffer.toString('binary');
+  const parts = body.split(boundary).slice(1, -1);
+  for (const part of parts) {
+    const [rawHeaders, rawContent = ''] = part.split('\r\n\r\n');
+    const disposition = /content-disposition:\s*form-data;[^\r\n]*/i.exec(rawHeaders || '')?.[0] || '';
+    const filename = /filename="([^"]*)"/i.exec(disposition)?.[1] || '';
+    const name = /name="([^"]*)"/i.exec(disposition)?.[1] || '';
+    const partContentType = /content-type:\s*([^\r\n]+)/i.exec(rawHeaders || '')?.[1]?.trim() || '';
+    if (name === 'file' && filename) {
+      const content = rawContent.replace(/\r\n$/, '');
+      return {
+        filename: basename(filename),
+        contentType: partContentType,
+        buffer: Buffer.from(content, 'binary'),
+      };
+    }
+  }
+  throw new Error('File is required');
+}
+
+function readBodyBuffer(request, limitBytes = ADMIN_MAX_BODY_BYTES) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let size = 0;
+    request.on('data', chunk => {
+      size += chunk.length;
+      if (size > limitBytes) {
+        reject(new Error('Request body too large'));
+        request.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    request.on('end', () => resolve(Buffer.concat(chunks)));
     request.on('error', reject);
   });
 }
@@ -420,6 +488,128 @@ function handleModels(request, response) {
   });
 }
 
+function requireAdminSession(request, response) {
+  if (!adminAuth.isConfigured()) {
+    sendJson(response, 503, { error: 'Admin auth is not configured' });
+    return false;
+  }
+  if (!adminAuth.isAuthenticated(request)) {
+    sendJson(response, 401, { error: 'Unauthorized' });
+    return false;
+  }
+  return true;
+}
+
+async function handleAdminLogin(request, response) {
+  const rawBody = await readBody(request, 2048);
+  const payload = JSON.parse(rawBody || '{}');
+  if (!adminAuth.verifyCredentials(payload.username, payload.password)) {
+    sendJson(response, 401, { error: '账号或密码错误' });
+    return;
+  }
+  response.writeHead(200, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Set-Cookie': adminAuth.createCookie(),
+  });
+  response.end(JSON.stringify({ ok: true }));
+}
+
+function handleAdminLogout(_request, response) {
+  response.writeHead(200, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Set-Cookie': adminAuth.clearCookie(),
+  });
+  response.end(JSON.stringify({ ok: true }));
+}
+
+async function handleAdminContent(request, response, url) {
+  if (!requireAdminSession(request, response)) return;
+  const parts = url.pathname.split('/').filter(Boolean);
+  const type = parts[3];
+  const id = decodeURIComponent(parts[4] || '');
+
+  if (url.pathname === '/api/admin/content' && request.method === 'GET') {
+    sendJson(response, 200, contentStore.adminContent());
+    return;
+  }
+
+  if (['travel', 'projects', 'fitness'].includes(type) && request.method === 'POST') {
+    const rawBody = await readBody(request, ADMIN_MAX_BODY_BYTES);
+    const payload = JSON.parse(rawBody || '{}');
+    const item = contentStore.upsert(type, payload);
+    sendJson(response, 200, item);
+    return;
+  }
+
+  if (['travel', 'projects', 'fitness'].includes(type) && id && request.method === 'DELETE') {
+    const deleted = contentStore.delete(type, id);
+    sendJson(response, deleted ? 200 : 404, deleted ? { ok: true } : { error: 'Not found' });
+    return;
+  }
+
+  sendJson(response, 404, { error: 'Not found' });
+}
+
+async function handleUpload(request, response) {
+  if (!requireAdminSession(request, response)) return;
+  const body = await readBodyBuffer(request, ADMIN_MAX_BODY_BYTES);
+  const file = parseMultipart(request, body);
+  const url = contentStore.storeUpload(file);
+  sendJson(response, 201, { url });
+}
+
+function serveUpload(request, response, url) {
+  const filename = basename(decodeURIComponent(url.pathname.replace('/uploads/', '')));
+  const filePath = normalize(join(UPLOAD_ROOT, filename));
+  if (!filePath.startsWith(normalize(UPLOAD_ROOT))) {
+    sendJson(response, 400, { error: 'Invalid path' });
+    return;
+  }
+  if (!existsSync(filePath)) {
+    sendJson(response, 404, { error: 'Not found' });
+    return;
+  }
+  const types = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif',
+  };
+  response.writeHead(200, {
+    'Content-Type': types[extname(filePath).toLowerCase()] || 'application/octet-stream',
+    'Content-Length': statSync(filePath).size,
+    'Cache-Control': 'public, max-age=31536000, immutable',
+  });
+  if (request.method === 'HEAD') {
+    response.end();
+    return;
+  }
+  createReadStream(filePath).pipe(response);
+}
+
+function handleAdminPage(request, response, url) {
+  if (!adminAuth.isConfigured()) {
+    sendHtml(response, 503, '<h1>Admin auth is not configured</h1><p>Set ADMIN_USERNAME plus ADMIN_PASSWORD or ADMIN_PASSWORD_HASH, and ADMIN_SESSION_SECRET.</p>');
+    return;
+  }
+  if (url.pathname === '/admin/login') {
+    if (adminAuth.isAuthenticated(request)) {
+      redirect(response, '/admin');
+      return;
+    }
+    sendHtml(response, 200, renderLoginPage());
+    return;
+  }
+  if (!adminAuth.isAuthenticated(request)) {
+    redirect(response, '/admin/login');
+    return;
+  }
+  sendHtml(response, 200, renderAdminPage());
+}
+
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
 
@@ -433,13 +623,27 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
-  if (!API_TOKEN) {
-    sendJson(response, 503, { error: 'AI service is not configured' });
+  if (url.pathname === '/api/public/content' && request.method === 'GET') {
+    sendJson(response, 200, contentStore.publicContent());
+    return;
+  }
+
+  if (url.pathname.startsWith('/uploads/') && ['GET', 'HEAD'].includes(request.method || '')) {
+    serveUpload(request, response, url);
+    return;
+  }
+
+  if (url.pathname === '/admin' || url.pathname.startsWith('/admin/')) {
+    handleAdminPage(request, response, url);
     return;
   }
 
   try {
     if (url.pathname === '/api/chat' && request.method === 'POST') {
+      if (!API_TOKEN) {
+        sendJson(response, 503, { error: 'AI service is not configured' });
+        return;
+      }
       if (isRateLimited(clientId(request))) {
         sendJson(response, 429, { error: 'Too many requests' });
         return;
@@ -456,6 +660,26 @@ const server = http.createServer(async (request, response) => {
       }
 
       await streamLongCat({ message, language }, response);
+      return;
+    }
+
+    if (url.pathname === '/api/admin/login' && request.method === 'POST') {
+      await handleAdminLogin(request, response);
+      return;
+    }
+
+    if (url.pathname === '/api/admin/logout' && request.method === 'POST') {
+      handleAdminLogout(request, response);
+      return;
+    }
+
+    if (url.pathname === '/api/admin/upload' && request.method === 'POST') {
+      await handleUpload(request, response);
+      return;
+    }
+
+    if (url.pathname === '/api/admin/content' || url.pathname.startsWith('/api/admin/content/')) {
+      await handleAdminContent(request, response, url);
       return;
     }
 

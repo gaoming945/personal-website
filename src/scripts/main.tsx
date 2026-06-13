@@ -2,7 +2,7 @@ import Swiper from 'swiper';
 import { FreeMode } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/free-mode';
-import { travelData, wishlistData, getTravelEntryById, type TravelEntry } from './travel-data';
+import { travelData as seedTravelData, wishlistData as seedWishlistData, type TravelEntry } from './travel-data';
 import { translations, type Language } from '../i18n/translations';
 
 type ThreeModule = typeof import('three');
@@ -42,6 +42,32 @@ const state: AppState = {
 let currentLanguage: Language = 'zh';
 let globeRuntime: GlobeRuntime | null = null;
 let globeInitStarted = false;
+let travelData: TravelEntry[] = seedTravelData;
+let wishlistData: TravelEntry[] = seedWishlistData;
+
+interface ManagedProject {
+  id: string;
+  name: string;
+  summary: string;
+  shortSummary?: string;
+  category: string;
+  kicker?: string;
+  status?: string;
+  techStack: string[];
+  coverImage?: string;
+  githubUrl?: string;
+  projectUrl?: string;
+  distributionName?: string;
+  distributionImage?: string;
+  order?: number;
+  visible?: boolean;
+}
+
+let projectData: ManagedProject[] = [];
+
+function getTravelEntryById(id: string): TravelEntry | undefined {
+  return [...travelData, ...wishlistData].find(entry => entry.id === id);
+}
 
 async function loadGlobeRuntime() {
   if (globeRuntime) return globeRuntime;
@@ -214,6 +240,94 @@ function entryStory(entry: TravelEntry) {
 function mediaCaption(caption?: string) {
   if (!caption) return '';
   return currentLanguage === 'en' ? photoCaptionCopy[caption] || caption : caption;
+}
+
+function escapeHtml(value: string | number | undefined | null) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function loadManagedContent() {
+  try {
+    const response = await fetch('/api/public/content', { headers: { Accept: 'application/json' } });
+    if (!response.ok) return;
+    const payload = await response.json();
+    if (Array.isArray(payload.travel) && payload.travel.length > 0) {
+      travelData = payload.travel;
+    }
+    if (Array.isArray(payload.wishlist) && payload.wishlist.length > 0) {
+      wishlistData = payload.wishlist;
+    }
+    if (Array.isArray(payload.projects)) {
+      projectData = payload.projects;
+    }
+  } catch {
+    // 后台内容接口不可用时使用随包静态数据兜底，避免前台空白。
+  }
+}
+
+function renderManagedProjects() {
+  const grid = document.querySelector('.project-grid') as HTMLElement | null;
+  if (!grid || projectData.length === 0) return;
+
+  grid.innerHTML = projectData
+    .filter(project => project.visible !== false)
+    .sort((a, b) => (a.order || 0) - (b.order || 0))
+    .map((project, index) => {
+      const techTags = (project.techStack || []).map(tag => `<span>${escapeHtml(tag)}</span>`).join('');
+      const links = [
+        project.githubUrl
+          ? `<a href="${escapeHtml(project.githubUrl)}" target="_blank" rel="noreferrer" class="project-link" data-i18n="project.link">打开仓库</a>`
+          : '',
+        project.projectUrl
+          ? `<a href="${escapeHtml(project.projectUrl)}" target="_blank" rel="noreferrer" class="project-link project-link-website" data-i18n="project.link.website">打开网站</a>`
+          : '',
+      ].filter(Boolean).join('');
+      const distribution = project.distributionImage
+        ? `<div class="distribution-panel">
+            <div>
+              <span class="distribution-label" data-i18n="distribution.label">App 分发</span>
+              <strong>${escapeHtml(project.distributionName || project.name)}</strong>
+            </div>
+            <img src="${escapeHtml(project.distributionImage)}" alt="${escapeHtml(project.distributionName || project.name)} App 分发二维码" width="120" height="120" loading="lazy" />
+          </div>`
+        : '';
+
+      return `<article class="project-card" data-category="${escapeHtml(project.category || 'data')}">
+        <div class="card-topline">
+          <span class="node-id">${String(index + 1).padStart(2, '0')}</span>
+          <span class="status-chip">${escapeHtml(project.category || 'Project')}</span>
+        </div>
+        <div class="project-card-header">
+          <span class="project-kicker">${escapeHtml(project.kicker || '项目')}</span>
+          <span class="project-state">${escapeHtml(project.status || '在线')}</span>
+        </div>
+        <h3>${escapeHtml(project.name)}</h3>
+        <p>${escapeHtml(project.summary)}</p>
+        <div class="project-tags">${techTags}</div>
+        ${distribution}
+        <div class="project-links">${links}</div>
+      </article>`;
+    })
+    .join('');
+}
+
+function initProjectFilters() {
+  const buttons = Array.from(document.querySelectorAll('[data-filter]')) as HTMLButtonElement[];
+  const applyFilter = (filter: string) => {
+    document.querySelectorAll('.project-card').forEach(card => {
+      const category = card.getAttribute('data-category') || '';
+      card.classList.toggle('is-hidden', filter !== 'all' && !category.split(/\s+/).includes(filter));
+    });
+    buttons.forEach(button => button.classList.toggle('is-active', button.dataset.filter === filter));
+  };
+  buttons.forEach(button => {
+    button.addEventListener('click', () => applyFilter(button.dataset.filter || 'all'));
+  });
 }
 
 function formatTravelDate(dateStr: string) {
@@ -1782,6 +1896,9 @@ function initGatewayPanel() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentLanguage = getStoredLanguage();
+  await loadManagedContent();
+  renderManagedProjects();
+  initProjectFilters();
   initTimeline();
   initDetailPanel();
   updateVisitedCount();
