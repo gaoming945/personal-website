@@ -52,6 +52,9 @@ function pageShell({ title, body, script = '' }) {
     .actions { display:flex; gap:8px; flex-wrap:wrap; }
     .upload-row { display:flex; gap:10px; align-items:center; }
     .upload-row input { padding:9px; }
+    .helper-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .helper-row button { padding:7px 10px; font-size:12px; color:var(--muted); background:rgba(104,245,178,.08); }
+    .field-hint { color:var(--muted); font-size:12px; font-weight:500; }
     .pill { display:inline-flex; padding:3px 8px; border:1px solid var(--line); border-radius:999px; color:var(--muted); font-size:12px; margin:2px; }
     @media (max-width: 860px) { .layout { grid-template-columns:1fr; } .sidebar { border-right:0; border-bottom:1px solid var(--line); display:flex; gap:10px; overflow:auto; } .nav-btn { min-width:120px; } .stats, .grid { grid-template-columns:1fr; } .content { padding:16px; } }
   </style>
@@ -130,6 +133,14 @@ const labels = {
   projects: { title:'项目管理', kicker:'Projects', columns:['项目','技术栈','展示','排序','操作'] },
   fitness: { title:'健身管理', kicker:'Fitness', columns:['标题','分类/日期','展示','排序','操作'] },
 };
+const projectPresets = {
+  'mobile game': { kicker:'移动端游戏', status:'已发布', techStack:'Kotlin, Jetpack Compose, Android' },
+  game: { kicker:'玩法原型', status:'可试玩', techStack:'TypeScript, Cocos Creator, Gameplay' },
+  data: { kicker:'数据工具', status:'在线运行', techStack:'Python, Streamlit, Finance' },
+  web: { kicker:'Web 应用', status:'在线运行', techStack:'TypeScript, Astro, Docker' },
+  ai: { kicker:'AI 工具', status:'内测', techStack:'Node.js, LongCat, OpenAI Compatible API' },
+};
+const fitnessCategories = ['增肌', '减脂', '体态', '饮食', '训练', '恢复'];
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const api = async (url, options={}) => {
   const res = await fetch(url, { ...options, headers:{ ...(options.headers || {}) } });
@@ -176,13 +187,41 @@ function bindTableActions() {
 function uploadField(name, value='') {
   return '<div class="full"><label>'+name+'<input name="'+name+'" value="'+escapeHtml(value)+'" placeholder="/uploads/xxx 或 https://..."></label><div class="upload-row"><input type="file" accept="image/*" data-upload-for="'+name+'"><button type="button" data-upload-button="'+name+'">上传图片</button></div></div>';
 }
+function allTravelPresets() {
+  return [...(state.data.travel || []), ...(state.data.wishlist || [])];
+}
+function countryPresets() {
+  const map = new Map();
+  for (const item of allTravelPresets()) {
+    if (!item.country) continue;
+    const current = map.get(item.country);
+    if (!current || item.isVisited) map.set(item.country, item);
+  }
+  return Array.from(map.values()).sort((a, b) => String(a.country).localeCompare(String(b.country), 'zh-CN'));
+}
+function cityPresets(country = '') {
+  return allTravelPresets()
+    .filter(item => !country || item.country === country || item.countryCode === country)
+    .sort((a, b) => String(a.city).localeCompare(String(b.city), 'zh-CN'));
+}
+function presetDatalists() {
+  const countries = countryPresets()
+    .map(item => '<option value="'+escapeHtml(item.country)+'" label="'+escapeHtml([item.flag, item.countryCode, item.city].filter(Boolean).join(' '))+'"></option>')
+    .join('');
+  const cities = cityPresets()
+    .map(item => '<option value="'+escapeHtml(item.city)+'" label="'+escapeHtml([item.country, item.countryCode].filter(Boolean).join(' '))+'"></option>')
+    .join('');
+  const categories = Object.keys(projectPresets).map(value => '<option value="'+escapeHtml(value)+'"></option>').join('');
+  return '<datalist id="country-options">'+countries+'</datalist><datalist id="city-options">'+cities+'</datalist><datalist id="project-category-options">'+categories+'</datalist>';
+}
 function openEditor(item={}) {
   state.editing = item;
   const editor = document.getElementById('editor');
   editor.classList.add('is-open');
-  editor.innerHTML = formTemplate(item) + '<div class="actions full"><button type="submit">保存</button><button class="ghost" type="button" id="cancel-edit">取消</button></div><p class="error" id="form-error"></p>';
+  editor.innerHTML = presetDatalists() + formTemplate(item) + '<div class="actions full"><button type="submit">保存</button><button class="ghost" type="button" id="cancel-edit">取消</button></div><p class="error" id="form-error"></p>';
   document.getElementById('cancel-edit').addEventListener('click', () => editor.classList.remove('is-open'));
   editor.querySelectorAll('[data-upload-button]').forEach(button => button.addEventListener('click', () => uploadImage(button.dataset.uploadButton)));
+  bindEditorConvenience(editor);
   editor.onsubmit = saveEditor;
   window.scrollTo({ top: editor.offsetTop - 90, behavior:'smooth' });
 }
@@ -190,9 +229,75 @@ function commonFields(item) {
   return '<label>ID<input name="id" value="'+escapeHtml(item.id || '')+'" placeholder="留空自动生成"></label><label>排序<input name="order" type="number" value="'+escapeHtml(item.order ?? 100)+'"></label><label>是否展示<select name="visible"><option value="true" '+(item.visible !== false ? 'selected' : '')+'>展示</option><option value="false" '+(item.visible === false ? 'selected' : '')+'>隐藏</option></select></label>';
 }
 function formTemplate(item) {
-  if (state.tab === 'travel') return '<div class="grid">'+commonFields(item)+'<label>国家<input name="country" required value="'+escapeHtml(item.country || '')+'"></label><label>城市<input name="city" required value="'+escapeHtml(item.city || '')+'"></label><label>国家代码<input name="countryCode" maxlength="4" value="'+escapeHtml(item.countryCode || '')+'"></label><label>旗帜<input name="flag" value="'+escapeHtml(item.flag || '')+'"></label><label>去过时间<input name="startDate" type="date" value="'+escapeHtml(item.startDate || '')+'"></label><label>结束时间<input name="endDate" type="date" value="'+escapeHtml(item.endDate || item.startDate || '')+'"></label><label>纬度<input name="lat" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[0] ?? 0)+'"></label><label>经度<input name="lng" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[1] ?? 0)+'"></label><label class="full">简介<textarea name="story">'+escapeHtml(item.story || '')+'</textarea></label>'+uploadField('coverImage', item.coverImage || '')+'<label class="full">照片列表 JSON<textarea name="photos">'+escapeHtml(JSON.stringify(item.photos || [], null, 2))+'</textarea></label></div>';
-  if (state.tab === 'projects') return '<div class="grid">'+commonFields(item)+'<label>项目名称<input name="name" required value="'+escapeHtml(item.name || '')+'"></label><label>分类<input name="category" value="'+escapeHtml(item.category || '')+'" placeholder="mobile game / game / data"></label><label>标签<input name="kicker" value="'+escapeHtml(item.kicker || '')+'"></label><label>状态<input name="status" value="'+escapeHtml(item.status || '')+'"></label><label class="full">项目简介<textarea name="summary">'+escapeHtml(item.summary || '')+'</textarea></label><label class="full">技术栈，逗号分隔<input name="techStack" value="'+escapeHtml((item.techStack || []).join(', '))+'"></label>'+uploadField('coverImage', item.coverImage || '')+'<label>GitHub 地址<input name="githubUrl" value="'+escapeHtml(item.githubUrl || '')+'"></label><label>项目链接<input name="projectUrl" value="'+escapeHtml(item.projectUrl || '')+'"></label><label>分发名称<input name="distributionName" value="'+escapeHtml(item.distributionName || '')+'"></label>'+uploadField('distributionImage', item.distributionImage || '')+'</div>';
-  return '<div class="grid">'+commonFields(item)+'<label>标题<input name="title" required value="'+escapeHtml(item.title || '')+'"></label><label>日期<input name="date" type="date" value="'+escapeHtml(item.date || '')+'"></label><label>分类<input name="category" value="'+escapeHtml(item.category || '')+'"></label><label class="full">描述<textarea name="description">'+escapeHtml(item.description || '')+'</textarea></label>'+uploadField('image', item.image || '')+'</div>';
+  if (state.tab === 'travel') return '<div class="grid">'+commonFields(item)+'<label>国家<input name="country" list="country-options" required value="'+escapeHtml(item.country || '')+'" placeholder="输入国家名，可模糊选择"></label><label>城市<input name="city" list="city-options" required value="'+escapeHtml(item.city || '')+'" placeholder="选择已有城市可自动带坐标"></label><label>国家代码<input name="countryCode" maxlength="4" value="'+escapeHtml(item.countryCode || '')+'"></label><label>旗帜<input name="flag" value="'+escapeHtml(item.flag || '')+'"></label><div class="full helper-row"><button type="button" data-fill-country>根据国家自动填充</button><button type="button" data-fill-city>根据城市自动填坐标</button><span class="field-hint">国家/城市来自现有旅行与心愿清单，支持继续手动修改。</span></div><label>去过时间<input name="startDate" type="date" value="'+escapeHtml(item.startDate || '')+'"></label><label>结束时间<input name="endDate" type="date" value="'+escapeHtml(item.endDate || item.startDate || '')+'"></label><label>纬度<input name="lat" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[0] ?? 0)+'"></label><label>经度<input name="lng" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[1] ?? 0)+'"></label><label class="full">简介<textarea name="story">'+escapeHtml(item.story || '')+'</textarea></label>'+uploadField('coverImage', item.coverImage || '')+'<label class="full">照片列表 JSON<textarea name="photos">'+escapeHtml(JSON.stringify(item.photos || [], null, 2))+'</textarea></label></div>';
+  if (state.tab === 'projects') return '<div class="grid">'+commonFields(item)+'<label>项目名称<input name="name" required value="'+escapeHtml(item.name || '')+'"></label><label>分类<input name="category" list="project-category-options" value="'+escapeHtml(item.category || '')+'" placeholder="mobile game / game / data / web / ai"></label><div class="full helper-row"><button type="button" data-fill-project>按分类填充标签、状态、技术栈</button><span class="field-hint">已有内容不会被强制覆盖，只在空字段里补默认值。</span></div><label>标签<input name="kicker" value="'+escapeHtml(item.kicker || '')+'"></label><label>状态<input name="status" value="'+escapeHtml(item.status || '')+'"></label><label class="full">项目简介<textarea name="summary">'+escapeHtml(item.summary || '')+'</textarea></label><label class="full">技术栈，逗号分隔<input name="techStack" value="'+escapeHtml((item.techStack || []).join(', '))+'"></label>'+uploadField('coverImage', item.coverImage || '')+'<label>GitHub 地址<input name="githubUrl" value="'+escapeHtml(item.githubUrl || '')+'"></label><label>项目链接<input name="projectUrl" value="'+escapeHtml(item.projectUrl || '')+'"></label><label>分发名称<input name="distributionName" value="'+escapeHtml(item.distributionName || '')+'"></label>'+uploadField('distributionImage', item.distributionImage || '')+'</div>';
+  const categoryOptions = fitnessCategories.map(category => '<option value="'+escapeHtml(category)+'" '+(item.category === category ? 'selected' : '')+'>'+escapeHtml(category)+'</option>').join('');
+  return '<div class="grid">'+commonFields(item)+'<label>标题<input name="title" required value="'+escapeHtml(item.title || '')+'"></label><label>日期<input name="date" type="date" value="'+escapeHtml(item.date || '')+'"></label><label>分类<select name="category"><option value="">选择分类</option>'+categoryOptions+'</select></label><label class="full">描述<textarea name="description">'+escapeHtml(item.description || '')+'</textarea></label>'+uploadField('image', item.image || '')+'</div>';
+}
+function findCountryPreset(value) {
+  const query = String(value || '').trim().toLowerCase();
+  if (!query) return null;
+  return countryPresets().find(item => [item.country, item.countryCode, item.flag].some(part => String(part || '').toLowerCase() === query))
+    || countryPresets().find(item => [item.country, item.countryCode, item.city].some(part => String(part || '').toLowerCase().includes(query)))
+    || null;
+}
+function findCityPreset(city, country='') {
+  const cityQuery = String(city || '').trim().toLowerCase();
+  const countryQuery = String(country || '').trim().toLowerCase();
+  if (!cityQuery) return null;
+  return cityPresets().find(item => {
+    const cityMatched = String(item.city || '').toLowerCase() === cityQuery || String(item.city || '').toLowerCase().includes(cityQuery);
+    const countryMatched = !countryQuery || String(item.country || '').toLowerCase() === countryQuery || String(item.countryCode || '').toLowerCase() === countryQuery;
+    return cityMatched && countryMatched;
+  }) || null;
+}
+function setIfEmpty(form, name, value) {
+  const input = form.querySelector('[name="'+name+'"]');
+  if (input && !input.value && value !== undefined && value !== null) input.value = value;
+}
+function bindEditorConvenience(editor) {
+  if (state.tab === 'travel') {
+    const countryInput = editor.querySelector('[name="country"]');
+    const cityInput = editor.querySelector('[name="city"]');
+    const fillCountry = () => {
+      const preset = findCountryPreset(countryInput?.value);
+      if (!preset) return;
+      setIfEmpty(editor, 'countryCode', preset.countryCode);
+      setIfEmpty(editor, 'flag', preset.flag);
+      setIfEmpty(editor, 'city', preset.city);
+      const lat = editor.querySelector('[name="lat"]');
+      const lng = editor.querySelector('[name="lng"]');
+      if (lat && Number(lat.value || 0) === 0) lat.value = preset.coordinates?.[0] ?? 0;
+      if (lng && Number(lng.value || 0) === 0) lng.value = preset.coordinates?.[1] ?? 0;
+    };
+    const fillCity = () => {
+      const preset = findCityPreset(cityInput?.value, countryInput?.value);
+      if (!preset) return;
+      setIfEmpty(editor, 'country', preset.country);
+      setIfEmpty(editor, 'countryCode', preset.countryCode);
+      setIfEmpty(editor, 'flag', preset.flag);
+      const lat = editor.querySelector('[name="lat"]');
+      const lng = editor.querySelector('[name="lng"]');
+      if (lat) lat.value = preset.coordinates?.[0] ?? 0;
+      if (lng) lng.value = preset.coordinates?.[1] ?? 0;
+    };
+    countryInput?.addEventListener('change', fillCountry);
+    cityInput?.addEventListener('change', fillCity);
+    editor.querySelector('[data-fill-country]')?.addEventListener('click', fillCountry);
+    editor.querySelector('[data-fill-city]')?.addEventListener('click', fillCity);
+  }
+  if (state.tab === 'projects') {
+    const fillProject = () => {
+      const category = editor.querySelector('[name="category"]')?.value;
+      const preset = projectPresets[category];
+      if (!preset) return;
+      setIfEmpty(editor, 'kicker', preset.kicker);
+      setIfEmpty(editor, 'status', preset.status);
+      setIfEmpty(editor, 'techStack', preset.techStack);
+    };
+    editor.querySelector('[name="category"]')?.addEventListener('change', fillProject);
+    editor.querySelector('[data-fill-project]')?.addEventListener('click', fillProject);
+  }
 }
 async function uploadImage(name) {
   const input = document.querySelector('[data-upload-for="'+name+'"]');
