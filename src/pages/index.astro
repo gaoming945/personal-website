@@ -411,7 +411,7 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
             <h3>LongCat Gateway</h3>
             <p>适合接入 Cherry Studio、NextChat、LobeChat 或 OpenAI SDK。Key 只显示一次，请自己保存。</p>
             <div class="gateway-endpoints">
-              <code>Base URL: https://yadan.duckdns.org:18080/v1</code>
+              <code>Base URL: http://yadan.duckdns.org:18080/v1</code>
               <code>POST /v1/chat/completions</code>
               <code>GET /v1/models</code>
             </div>
@@ -432,7 +432,7 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
             <span class="project-kicker">API Key</span>
             <pre><code data-gateway-key></code></pre>
             <button type="button" data-gateway-copy>复制 Key</button>
-            <pre><code>{`curl https://yadan.duckdns.org:18080/v1/chat/completions \
+            <pre><code>{`curl http://yadan.duckdns.org:18080/v1/chat/completions \
   -H "Authorization: Bearer YOUR_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"LongCat-2.0-Preview","messages":[{"role":"user","content":"你好"}]}'`}</code></pre>
