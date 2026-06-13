@@ -204,6 +204,16 @@ function cityPresets(country = '') {
     .filter(item => !country || item.country === country || item.countryCode === country)
     .sort((a, b) => String(a.city).localeCompare(String(b.city), 'zh-CN'));
 }
+function uniqueOptions(items, getter, labelGetter) {
+  const seen = new Set();
+  return items
+    .map(item => ({ value: getter(item), label: labelGetter(item) }))
+    .filter(option => {
+      if (!option.value || seen.has(option.value)) return false;
+      seen.add(option.value);
+      return true;
+    });
+}
 function presetDatalists() {
   const countries = countryPresets()
     .map(item => '<option value="'+escapeHtml(item.country)+'" label="'+escapeHtml([item.flag, item.countryCode, item.city].filter(Boolean).join(' '))+'"></option>')
@@ -211,8 +221,14 @@ function presetDatalists() {
   const cities = cityPresets()
     .map(item => '<option value="'+escapeHtml(item.city)+'" label="'+escapeHtml([item.country, item.countryCode].filter(Boolean).join(' '))+'"></option>')
     .join('');
+  const countryCodes = uniqueOptions(allTravelPresets(), item => item.countryCode, item => [item.flag, item.country, item.city].filter(Boolean).join(' '))
+    .map(item => '<option value="'+escapeHtml(item.value)+'" label="'+escapeHtml(item.label)+'"></option>')
+    .join('');
+  const flags = uniqueOptions(allTravelPresets(), item => item.flag, item => [item.country, item.countryCode, item.city].filter(Boolean).join(' '))
+    .map(item => '<option value="'+escapeHtml(item.value)+'" label="'+escapeHtml(item.label)+'"></option>')
+    .join('');
   const categories = Object.keys(projectPresets).map(value => '<option value="'+escapeHtml(value)+'"></option>').join('');
-  return '<datalist id="country-options">'+countries+'</datalist><datalist id="city-options">'+cities+'</datalist><datalist id="project-category-options">'+categories+'</datalist>';
+  return '<datalist id="country-options">'+countries+'</datalist><datalist id="city-options">'+cities+'</datalist><datalist id="country-code-options">'+countryCodes+'</datalist><datalist id="flag-options">'+flags+'</datalist><datalist id="project-category-options">'+categories+'</datalist>';
 }
 function openEditor(item={}) {
   state.editing = item;
@@ -229,7 +245,7 @@ function commonFields(item) {
   return '<label>ID<input name="id" value="'+escapeHtml(item.id || '')+'" placeholder="留空自动生成"></label><label>排序<input name="order" type="number" value="'+escapeHtml(item.order ?? 100)+'"></label><label>是否展示<select name="visible"><option value="true" '+(item.visible !== false ? 'selected' : '')+'>展示</option><option value="false" '+(item.visible === false ? 'selected' : '')+'>隐藏</option></select></label>';
 }
 function formTemplate(item) {
-  if (state.tab === 'travel') return '<div class="grid">'+commonFields(item)+'<label>国家<input name="country" list="country-options" required value="'+escapeHtml(item.country || '')+'" placeholder="输入国家名，可模糊选择"></label><label>城市<input name="city" list="city-options" required value="'+escapeHtml(item.city || '')+'" placeholder="选择已有城市可自动带坐标"></label><label>国家代码<input name="countryCode" maxlength="4" value="'+escapeHtml(item.countryCode || '')+'"></label><label>旗帜<input name="flag" value="'+escapeHtml(item.flag || '')+'"></label><div class="full helper-row"><button type="button" data-fill-country>根据国家自动填充</button><button type="button" data-fill-city>根据城市自动填坐标</button><span class="field-hint">国家/城市来自现有旅行与心愿清单，支持继续手动修改。</span></div><label>去过时间<input name="startDate" type="date" value="'+escapeHtml(item.startDate || '')+'"></label><label>结束时间<input name="endDate" type="date" value="'+escapeHtml(item.endDate || item.startDate || '')+'"></label><label>纬度<input name="lat" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[0] ?? 0)+'"></label><label>经度<input name="lng" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[1] ?? 0)+'"></label><label class="full">简介<textarea name="story">'+escapeHtml(item.story || '')+'</textarea></label>'+uploadField('coverImage', item.coverImage || '')+'<label class="full">照片列表 JSON<textarea name="photos">'+escapeHtml(JSON.stringify(item.photos || [], null, 2))+'</textarea></label></div>';
+  if (state.tab === 'travel') return '<div class="grid">'+commonFields(item)+'<label>国家<input name="country" list="country-options" required value="'+escapeHtml(item.country || '')+'" placeholder="下拉选择，也可输入模糊搜索"></label><label>城市<input name="city" list="city-options" required value="'+escapeHtml(item.city || '')+'" placeholder="下拉选择城市，自动联动坐标"></label><label>国家代码<input name="countryCode" list="country-code-options" maxlength="4" value="'+escapeHtml(item.countryCode || '')+'" placeholder="例如 JP / CN / GB"></label><label>旗帜<input name="flag" list="flag-options" value="'+escapeHtml(item.flag || '')+'" placeholder="选择国旗"></label><div class="full helper-row"><span class="field-hint">国家、城市、国家代码、旗帜都是下拉候选；选任意一个会自动联动其它字段，之后仍可手动微调。</span></div><label>去过时间<input name="startDate" type="date" value="'+escapeHtml(item.startDate || '')+'"></label><label>结束时间<input name="endDate" type="date" value="'+escapeHtml(item.endDate || item.startDate || '')+'"></label><label>纬度<input name="lat" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[0] ?? 0)+'"></label><label>经度<input name="lng" type="number" step="0.0001" value="'+escapeHtml(item.coordinates?.[1] ?? 0)+'"></label><label class="full">简介<textarea name="story">'+escapeHtml(item.story || '')+'</textarea></label>'+uploadField('coverImage', item.coverImage || '')+'<label class="full">照片列表 JSON<textarea name="photos">'+escapeHtml(JSON.stringify(item.photos || [], null, 2))+'</textarea></label></div>';
   if (state.tab === 'projects') return '<div class="grid">'+commonFields(item)+'<label>项目名称<input name="name" required value="'+escapeHtml(item.name || '')+'"></label><label>分类<input name="category" list="project-category-options" value="'+escapeHtml(item.category || '')+'" placeholder="mobile game / game / data / web / ai"></label><div class="full helper-row"><button type="button" data-fill-project>按分类填充标签、状态、技术栈</button><span class="field-hint">已有内容不会被强制覆盖，只在空字段里补默认值。</span></div><label>标签<input name="kicker" value="'+escapeHtml(item.kicker || '')+'"></label><label>状态<input name="status" value="'+escapeHtml(item.status || '')+'"></label><label class="full">项目简介<textarea name="summary">'+escapeHtml(item.summary || '')+'</textarea></label><label class="full">技术栈，逗号分隔<input name="techStack" value="'+escapeHtml((item.techStack || []).join(', '))+'"></label>'+uploadField('coverImage', item.coverImage || '')+'<label>GitHub 地址<input name="githubUrl" value="'+escapeHtml(item.githubUrl || '')+'"></label><label>项目链接<input name="projectUrl" value="'+escapeHtml(item.projectUrl || '')+'"></label><label>分发名称<input name="distributionName" value="'+escapeHtml(item.distributionName || '')+'"></label>'+uploadField('distributionImage', item.distributionImage || '')+'</div>';
   const categoryOptions = fitnessCategories.map(category => '<option value="'+escapeHtml(category)+'" '+(item.category === category ? 'selected' : '')+'>'+escapeHtml(category)+'</option>').join('');
   return '<div class="grid">'+commonFields(item)+'<label>标题<input name="title" required value="'+escapeHtml(item.title || '')+'"></label><label>日期<input name="date" type="date" value="'+escapeHtml(item.date || '')+'"></label><label>分类<select name="category"><option value="">选择分类</option>'+categoryOptions+'</select></label><label class="full">描述<textarea name="description">'+escapeHtml(item.description || '')+'</textarea></label>'+uploadField('image', item.image || '')+'</div>';
@@ -239,6 +255,14 @@ function findCountryPreset(value) {
   if (!query) return null;
   return countryPresets().find(item => [item.country, item.countryCode, item.flag].some(part => String(part || '').toLowerCase() === query))
     || countryPresets().find(item => [item.country, item.countryCode, item.city].some(part => String(part || '').toLowerCase().includes(query)))
+    || null;
+}
+function findTravelPreset(value, fields = ['country', 'city', 'countryCode', 'flag']) {
+  const query = String(value || '').trim().toLowerCase();
+  if (!query) return null;
+  const entries = allTravelPresets();
+  return entries.find(item => fields.some(field => String(item[field] || '').toLowerCase() === query))
+    || entries.find(item => fields.some(field => String(item[field] || '').toLowerCase().includes(query)))
     || null;
 }
 function findCityPreset(city, country='') {
@@ -251,49 +275,64 @@ function findCityPreset(city, country='') {
     return cityMatched && countryMatched;
   }) || null;
 }
-function setIfEmpty(form, name, value) {
+function setField(form, name, value, { overwrite = true } = {}) {
   const input = form.querySelector('[name="'+name+'"]');
-  if (input && !input.value && value !== undefined && value !== null) input.value = value;
+  if (input && (overwrite || !input.value) && value !== undefined && value !== null) input.value = value;
+}
+function refreshCityOptions(editor, country) {
+  const datalist = editor.querySelector('#city-options');
+  if (!datalist) return;
+  datalist.innerHTML = cityPresets(country)
+    .map(item => '<option value="'+escapeHtml(item.city)+'" label="'+escapeHtml([item.country, item.countryCode].filter(Boolean).join(' '))+'"></option>')
+    .join('');
+}
+function applyTravelPreset(editor, preset, { overwriteCity = true } = {}) {
+  if (!preset) return;
+  setField(editor, 'country', preset.country);
+  setField(editor, 'countryCode', preset.countryCode);
+  setField(editor, 'flag', preset.flag);
+  if (overwriteCity) setField(editor, 'city', preset.city);
+  setField(editor, 'lat', preset.coordinates?.[0] ?? 0);
+  setField(editor, 'lng', preset.coordinates?.[1] ?? 0);
+  refreshCityOptions(editor, preset.country);
 }
 function bindEditorConvenience(editor) {
   if (state.tab === 'travel') {
     const countryInput = editor.querySelector('[name="country"]');
     const cityInput = editor.querySelector('[name="city"]');
+    const codeInput = editor.querySelector('[name="countryCode"]');
+    const flagInput = editor.querySelector('[name="flag"]');
     const fillCountry = () => {
       const preset = findCountryPreset(countryInput?.value);
-      if (!preset) return;
-      setIfEmpty(editor, 'countryCode', preset.countryCode);
-      setIfEmpty(editor, 'flag', preset.flag);
-      setIfEmpty(editor, 'city', preset.city);
-      const lat = editor.querySelector('[name="lat"]');
-      const lng = editor.querySelector('[name="lng"]');
-      if (lat && Number(lat.value || 0) === 0) lat.value = preset.coordinates?.[0] ?? 0;
-      if (lng && Number(lng.value || 0) === 0) lng.value = preset.coordinates?.[1] ?? 0;
+      applyTravelPreset(editor, preset);
     };
     const fillCity = () => {
       const preset = findCityPreset(cityInput?.value, countryInput?.value);
-      if (!preset) return;
-      setIfEmpty(editor, 'country', preset.country);
-      setIfEmpty(editor, 'countryCode', preset.countryCode);
-      setIfEmpty(editor, 'flag', preset.flag);
-      const lat = editor.querySelector('[name="lat"]');
-      const lng = editor.querySelector('[name="lng"]');
-      if (lat) lat.value = preset.coordinates?.[0] ?? 0;
-      if (lng) lng.value = preset.coordinates?.[1] ?? 0;
+      applyTravelPreset(editor, preset);
     };
+    const fillCode = () => {
+      const preset = findTravelPreset(codeInput?.value, ['countryCode']);
+      applyTravelPreset(editor, preset);
+    };
+    const fillFlag = () => {
+      const preset = findTravelPreset(flagInput?.value, ['flag']);
+      applyTravelPreset(editor, preset);
+    };
+    countryInput?.addEventListener('input', () => refreshCityOptions(editor, countryInput.value));
     countryInput?.addEventListener('change', fillCountry);
     cityInput?.addEventListener('change', fillCity);
-    editor.querySelector('[data-fill-country]')?.addEventListener('click', fillCountry);
-    editor.querySelector('[data-fill-city]')?.addEventListener('click', fillCity);
+    codeInput?.addEventListener('change', fillCode);
+    flagInput?.addEventListener('change', fillFlag);
+    refreshCityOptions(editor, countryInput?.value || '');
   }
   if (state.tab === 'projects') {
     const fillProject = () => {
       const category = editor.querySelector('[name="category"]')?.value;
       const preset = projectPresets[category];
       if (!preset) return;
-      setIfEmpty(editor, 'kicker', preset.kicker);
-      setIfEmpty(editor, 'status', preset.status);
-      setIfEmpty(editor, 'techStack', preset.techStack);
+      setField(editor, 'kicker', preset.kicker, { overwrite: false });
+      setField(editor, 'status', preset.status, { overwrite: false });
+      setField(editor, 'techStack', preset.techStack, { overwrite: false });
     };
     editor.querySelector('[name="category"]')?.addEventListener('change', fillProject);
     editor.querySelector('[data-fill-project]')?.addEventListener('click', fillProject);
