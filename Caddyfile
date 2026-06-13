@@ -26,3 +26,7 @@
     @static path *.css *.js *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2
     header @static Cache-Control "public, max-age=31536000, immutable"
 }
+
+:8501 {
+    reverse_proxy market-watch-web:8501
+}
