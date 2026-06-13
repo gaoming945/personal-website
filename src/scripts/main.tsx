@@ -1,6 +1,3 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import ThreeGlobe from 'three-globe';
 import Swiper from 'swiper';
 import { FreeMode } from 'swiper/modules';
 import 'swiper/css';
@@ -8,17 +5,27 @@ import 'swiper/css/free-mode';
 import { travelData, wishlistData, getTravelEntryById, type TravelEntry } from './travel-data';
 import { translations, type Language } from '../i18n/translations';
 
+type ThreeModule = typeof import('three');
+type OrbitControlsCtor = (typeof import('three/examples/jsm/controls/OrbitControls.js'))['OrbitControls'];
+type ThreeGlobeCtor = (typeof import('three-globe'))['default'];
+
 interface AppState {
   selectedId: string | null;
   isUpdating: boolean;
   activeTab: 'visited' | 'wishlist';
-  globe: InstanceType<typeof ThreeGlobe> | null;
-  camera: THREE.PerspectiveCamera | null;
-  scene: THREE.Scene | null;
-  renderer: THREE.WebGLRenderer | null;
-  controls: InstanceType<typeof OrbitControls> | null;
+  globe: any | null;
+  camera: any | null;
+  scene: any | null;
+  renderer: any | null;
+  controls: any | null;
   timeline: Swiper | null;
 }
+
+type GlobeRuntime = {
+  THREE: ThreeModule;
+  OrbitControls: OrbitControlsCtor;
+  ThreeGlobe: ThreeGlobeCtor;
+};
 
 const state: AppState = {
   selectedId: null,
@@ -33,6 +40,26 @@ const state: AppState = {
 };
 
 let currentLanguage: Language = 'zh';
+let globeRuntime: GlobeRuntime | null = null;
+let globeInitStarted = false;
+
+async function loadGlobeRuntime() {
+  if (globeRuntime) return globeRuntime;
+
+  const [THREE, controlsModule, globeModule] = await Promise.all([
+    import('three'),
+    import('three/examples/jsm/controls/OrbitControls.js'),
+    import('three-globe'),
+  ]);
+
+  globeRuntime = {
+    THREE,
+    OrbitControls: controlsModule.OrbitControls,
+    ThreeGlobe: globeModule.default,
+  };
+
+  return globeRuntime;
+}
 
 const travelCopy: Record<string, { country: string; city: string; story?: string }> = {
   'indonesia-bali-2026': {
@@ -237,7 +264,10 @@ function isVisitedCountryFeature(feature: any, visitedCountryCodes: Set<string>)
 
 async function initGlobe() {
   const container = document.querySelector('[data-travel-globe]') as HTMLElement;
-  if (!container) return;
+  if (!container || globeInitStarted) return;
+  globeInitStarted = true;
+
+  const { THREE, OrbitControls, ThreeGlobe } = await loadGlobeRuntime();
 
   const width = container.clientWidth;
   const height = container.clientHeight;
@@ -349,7 +379,7 @@ async function initGlobe() {
   state.controls = controls;
 
   renderer.domElement.addEventListener('click', (event) => {
-    handleGlobeClick(event, container, camera, scene);
+    handleGlobeClick(event, container, camera, scene, THREE, ThreeGlobe);
   });
 
   // Default select first visited entry, or first wishlist entry
@@ -377,8 +407,10 @@ async function initGlobe() {
 function handleGlobeClick(
   event: MouseEvent,
   container: HTMLElement,
-  camera: THREE.PerspectiveCamera,
-  scene: THREE.Scene,
+  camera: any,
+  scene: any,
+  THREE: typeof import('three'),
+  ThreeGlobe: typeof import('three-globe').default,
 ) {
   if (!state.globe) return;
 
@@ -391,7 +423,7 @@ function handleGlobeClick(
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(mouse, camera);
 
-  const globeObjects = scene.children.filter(c => c instanceof ThreeGlobe);
+  const globeObjects = scene.children.filter((c: any) => c instanceof ThreeGlobe);
   if (globeObjects.length === 0) return;
 
   const intersects = raycaster.intersectObjects(globeObjects, true);
@@ -425,9 +457,10 @@ function handleGlobeClick(
 }
 
 function flyToCountry(coordinates: [number, number]) {
-  if (!state.camera || !state.controls) return;
+  if (!state.camera || !state.controls || !globeRuntime) return;
 
   const [lat, lng] = coordinates;
+  const { THREE } = globeRuntime;
 
   // Use ThreeGlobe's exact coordinate system (from Polar2Cartesian in shader):
   // phi = toRad(90 - lat), theta = toRad(90 - lng)
@@ -466,6 +499,27 @@ function flyToCountry(coordinates: [number, number]) {
     }
   }
   animateCamera();
+}
+
+function initGlobeWhenVisible() {
+  const container = document.querySelector('[data-travel-globe]') as HTMLElement | null;
+  if (!container) return;
+
+  if (!('IntersectionObserver' in window)) {
+    void initGlobe();
+    return;
+  }
+
+  const observer = new IntersectionObserver((entries) => {
+    if (!entries.some(entry => entry.isIntersecting)) return;
+    observer.disconnect();
+    void initGlobe();
+  }, {
+    rootMargin: '320px 0px',
+    threshold: 0.01,
+  });
+
+  observer.observe(container);
 }
 
 // ==================== Timeline Module ====================
@@ -819,6 +873,10 @@ function updateVisitedCount() {
 // ==================== Background Effects ====================
 
 function initBackgroundEffects() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
   // Create particles container
   const particlesContainer = document.createElement('div');
   particlesContainer.className = 'bg-particles';
@@ -857,6 +915,10 @@ let particleContainer: HTMLElement | null = null;
 let cursorDot: HTMLElement | null = null;
 
 function initMouseEffects() {
+  if (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return;
+  }
+
   // Create particle container
   particleContainer = document.createElement('div');
   particleContainer.className = 'mouse-particles';
@@ -1653,7 +1715,6 @@ function initAiChat() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   currentLanguage = getStoredLanguage();
-  await initGlobe();
   initTimeline();
   initDetailPanel();
   updateVisitedCount();
@@ -1664,4 +1725,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   initLanguageToggle();
   initActiveNavigation();
   initAiChat();
+  initGlobeWhenVisible();
 });
