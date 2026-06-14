@@ -241,6 +241,7 @@ function page() {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>基金实时估值系统</title>
+  <link rel="icon" href="data:," />
   <style>
     :root { color-scheme: dark; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #101010; color: #f5f5f5; }
     body { margin: 0; background: #101010; }
