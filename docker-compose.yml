@@ -44,6 +44,7 @@ services:
     restart: unless-stopped
     networks:
       - web
+      - fund_valuation
     depends_on:
       - website
       - ai-api
@@ -51,6 +52,9 @@ services:
 networks:
   web:
     driver: bridge
+  fund_valuation:
+    external: true
+    name: fund-valuation-system-frontend-next-js_default
 
 volumes:
   caddy_data:

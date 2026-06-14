@@ -7,6 +7,14 @@
         reverse_proxy ai-api:8787
     }
 
+    handle_path /fund* {
+        reverse_proxy fund-valuation-frontend:3000
+    }
+
+    handle /_next/* {
+        reverse_proxy fund-valuation-frontend:3000
+    }
+
     handle /api/* {
         reverse_proxy ai-api:8787
     }
