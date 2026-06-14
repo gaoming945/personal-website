@@ -7,7 +7,13 @@
         reverse_proxy ai-api:8787
     }
 
-    handle_path /fund* {
+    @fundRoot path /fund /fund/
+    handle @fundRoot {
+        rewrite * /
+        reverse_proxy fund-valuation-frontend:3000
+    }
+
+    handle /fund/* {
         reverse_proxy fund-valuation-frontend:3000
     }
 
