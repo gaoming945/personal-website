@@ -327,8 +327,11 @@ function page() {
           </a>\`;
       }).join("");
     }
+    function apiBase() {
+      return window.location.pathname.startsWith("/fund") ? "/fund" : "";
+    }
     async function refresh() {
-      const res = await fetch("/api/fund/snapshot", { cache: "no-store" });
+      const res = await fetch(apiBase() + "/api/fund/snapshot", { cache: "no-store" });
       snapshot = await res.json();
       renderMarkets();
       renderFunds();
