@@ -8,3 +8,5 @@ dist/
 ._*
 **/._*
 npm-debug.log*
+.playwright-cli/
+output/
