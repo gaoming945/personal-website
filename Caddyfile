@@ -10,15 +10,15 @@
     @fundRoot path /fund /fund/
     handle @fundRoot {
         rewrite * /
-        reverse_proxy fund-valuation-frontend:3000
+        reverse_proxy fund-valuation:3000
     }
 
     handle /fund/* {
-        reverse_proxy fund-valuation-frontend:3000
+        reverse_proxy fund-valuation:3000
     }
 
     handle /_next/* {
-        reverse_proxy fund-valuation-frontend:3000
+        reverse_proxy fund-valuation:3000
     }
 
     handle /api/* {

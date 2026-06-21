@@ -46,7 +46,14 @@ Put the LongCat API key in `.env`. The browser never receives the key.
 
 ## Docker
 
-Build and run the production containers:
+Create the shared service network once:
+
+```bash
+docker network create service-gateway
+```
+
+Start the independent `fund-valuation-system` repository before this stack when
+the `/fund/` reverse-proxy route is needed. Then build and run this project:
 
 ```bash
 docker compose up -d --build
@@ -63,6 +70,10 @@ The Docker stack includes:
 - `personal-website`: static Astro site served by Nginx
 - `personal-website-ai`: LongCat-backed `/api/chat` service
 - `caddy`: public reverse proxy for the website and API
+
+The fund valuation service is not built by this repository. Caddy reaches the
+independent `fund-valuation` container through the external `service-gateway`
+network.
 
 The router admin page remains separate at:
 
