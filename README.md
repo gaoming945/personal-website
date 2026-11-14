@@ -52,8 +52,7 @@ Create the shared service network once:
 docker network create service-gateway
 ```
 
-Start the independent `fund-valuation-system` repository before this stack when
-the `/fund/` reverse-proxy route is needed. Then build and run this project:
+Build and run this project:
 
 ```bash
 docker compose up -d --build
