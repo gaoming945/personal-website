@@ -312,36 +312,19 @@ function escapeHtml(value: string | number | undefined | null) {
 }
 
 async function loadManagedContent() {
-  try {
-    const response = await fetch('/api/public/content', { headers: { Accept: 'application/json' } });
-    if (response.ok) {
-      const payload = await response.json();
-      if (Array.isArray(payload.travel) && payload.travel.length > 0) {
-        travelData = payload.travel;
-      }
-      if (Array.isArray(payload.wishlist) && payload.wishlist.length > 0) {
-        wishlistData = payload.wishlist;
-      }
-      if (Array.isArray(payload.projects)) {
-        projectData = payload.projects;
-      }
-    }
-  } catch {
-    // 后台内容接口不可用时使用随包静态数据兜底，避免前台空白。
-  }
-
-  // 项目卡片没有随包种子数据，接口不可用时用静态 projects.json 兜底（后台恢复后仍以后台为准）。
+  // 纯静态站点：内容数据随仓库发布，原后台内容接口已下线。
+  // 种子数据为空时再尝试静态 projects.json（两者内容保持一致，任一可用即可）。
   if (projectData.length === 0) {
     try {
-      const fallbackResponse = await fetch(`${BASE_URL}projects.json`);
-      if (fallbackResponse.ok) {
-        const fallbackProjects = await fallbackResponse.json();
-        if (Array.isArray(fallbackProjects)) {
-          projectData = fallbackProjects;
+      const response = await fetch(`${BASE_URL}projects.json`);
+      if (response.ok) {
+        const projects = await response.json();
+        if (Array.isArray(projects)) {
+          projectData = projects;
         }
       }
     } catch {
-      // 静态兜底也不可用时保持空白（与原行为一致）。
+      // 静态数据也不可用时保持空白（与原行为一致）。
     }
   }
 }
