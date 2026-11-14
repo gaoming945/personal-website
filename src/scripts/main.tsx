@@ -392,13 +392,17 @@ function renderManagedProjects() {
           ? `<a href="${escapeHtml(project.projectUrl)}" target="_blank" rel="noreferrer" class="project-link project-link-website" data-i18n="project.link.website">打开网站</a>`
           : '',
       ].filter(Boolean).join('');
-      const distribution = project.distributionImage
+      // 分发二维码在数据里是根路径（/assets/...），子路径部署时需补 BASE_URL 前缀，否则 404。
+      const distributionImage = project.distributionImage?.startsWith('/')
+        ? `${BASE_URL}${project.distributionImage.slice(1)}`
+        : project.distributionImage;
+      const distribution = distributionImage
         ? `<div class="distribution-panel">
             <div>
               <span class="distribution-label" data-i18n="distribution.label">App 分发</span>
               <strong>${escapeHtml(project.distributionName || project.name)}</strong>
             </div>
-            <img src="${escapeHtml(project.distributionImage)}" alt="${escapeHtml(project.distributionName || project.name)} App 分发二维码" width="120" height="120" loading="lazy" />
+            <img src="${escapeHtml(distributionImage)}" alt="${escapeHtml(project.distributionName || project.name)} App 分发二维码" width="120" height="120" loading="lazy" />
           </div>`
         : '';
 
