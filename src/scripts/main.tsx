@@ -91,6 +91,26 @@ async function loadGlobeRuntime() {
 }
 
 const travelCopy: Record<string, { country: string; city: string; story?: string }> = {
+  'usa-san-francisco-2026': {
+    country: 'United States',
+    city: 'San Francisco',
+    story: 'San Francisco is a cultural and tech hub in California, famed for the Golden Gate Bridge, steep hills, and bay fog.',
+  },
+  'usa-los-angeles-2026': {
+    country: 'United States',
+    city: 'Los Angeles',
+    story: 'Los Angeles is California\'s largest city, famed for Hollywood, sunny beaches, and diverse neighborhoods.',
+  },
+  'portugal-lisbon-2026': {
+    country: 'Portugal',
+    city: 'Lisbon',
+    story: 'Lisbon is the capital of Portugal, famed for its yellow trams, pastel de nata, and Atlantic light.',
+  },
+  'spain-seville-2026': {
+    country: 'Spain',
+    city: 'Seville',
+    story: 'Seville is the capital of Andalusia, famed for flamenco, its Gothic cathedral, and the Plaza de España.',
+  },
   'indonesia-bali-2026': {
     country: 'Indonesia',
     city: 'Bali',
@@ -257,19 +277,35 @@ function escapeHtml(value: string | number | undefined | null) {
 async function loadManagedContent() {
   try {
     const response = await fetch('/api/public/content', { headers: { Accept: 'application/json' } });
-    if (!response.ok) return;
-    const payload = await response.json();
-    if (Array.isArray(payload.travel) && payload.travel.length > 0) {
-      travelData = payload.travel;
-    }
-    if (Array.isArray(payload.wishlist) && payload.wishlist.length > 0) {
-      wishlistData = payload.wishlist;
-    }
-    if (Array.isArray(payload.projects)) {
-      projectData = payload.projects;
+    if (response.ok) {
+      const payload = await response.json();
+      if (Array.isArray(payload.travel) && payload.travel.length > 0) {
+        travelData = payload.travel;
+      }
+      if (Array.isArray(payload.wishlist) && payload.wishlist.length > 0) {
+        wishlistData = payload.wishlist;
+      }
+      if (Array.isArray(payload.projects)) {
+        projectData = payload.projects;
+      }
     }
   } catch {
     // 后台内容接口不可用时使用随包静态数据兜底，避免前台空白。
+  }
+
+  // 项目卡片没有随包种子数据，接口不可用时用静态 projects.json 兜底（后台恢复后仍以后台为准）。
+  if (projectData.length === 0) {
+    try {
+      const fallbackResponse = await fetch(`${BASE_URL}projects.json`);
+      if (fallbackResponse.ok) {
+        const fallbackProjects = await fallbackResponse.json();
+        if (Array.isArray(fallbackProjects)) {
+          projectData = fallbackProjects;
+        }
+      }
+    } catch {
+      // 静态兜底也不可用时保持空白（与原行为一致）。
+    }
   }
 }
 
