@@ -62,28 +62,12 @@ export default function PhotoGallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${BASE_URL}api/public/content`)
+    // 纯静态站点：健身照片数据随仓库发布（public/photos.json），原后台接口已下线。
+    fetch(`${BASE_URL}photos.json`)
       .then(res => res.json())
-      .then(data => {
-        const managedPhotos = Array.isArray(data.fitness)
-          ? data.fitness
-              .filter((item: FitnessRecord) => item.visible !== false && item.image)
-              .map((item: FitnessRecord) => ({
-                src: item.image,
-                alt: item.title,
-                width: item.width || 800,
-                height: item.height || 600,
-              }))
-          : [];
-        setPhotos(managedPhotos);
-        setLoading(false);
-      })
-      .catch(() => {
-        fetch(`${BASE_URL}photos.json`)
-          .then(res => res.json())
-          .then(data => setPhotos(data))
-          .finally(() => setLoading(false));
-      });
+      .then(data => setPhotos(data))
+      .catch(() => setPhotos([]))
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
