@@ -1,6 +1,9 @@
 import { useState, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 
+// BASE_URL 根路径构建时为 "/"，子路径构建时为 "/personal-website"（无尾斜杠），统一补齐尾斜杠再拼接。
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
 interface Photo {
   src: string;
   alt: string;
@@ -59,7 +62,7 @@ export default function PhotoGallery() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/public/content')
+    fetch(`${BASE_URL}api/public/content`)
       .then(res => res.json())
       .then(data => {
         const managedPhotos = Array.isArray(data.fitness)
@@ -76,7 +79,7 @@ export default function PhotoGallery() {
         setLoading(false);
       })
       .catch(() => {
-        fetch('/photos.json')
+        fetch(`${BASE_URL}photos.json`)
           .then(res => res.json())
           .then(data => setPhotos(data))
           .finally(() => setLoading(false));
