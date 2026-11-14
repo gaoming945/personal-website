@@ -5,6 +5,9 @@ import 'swiper/css/free-mode';
 import { travelData as seedTravelData, wishlistData as seedWishlistData, type TravelEntry } from './travel-data';
 import { translations, type Language } from '../i18n/translations';
 
+// BASE_URL 根路径构建时为 "/"，子路径构建时为 "/personal-website"（无尾斜杠），统一补齐尾斜杠再拼接。
+const BASE_URL = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+
 type ThreeModule = typeof import('three');
 type OrbitControlsCtor = (typeof import('three/examples/jsm/controls/OrbitControls.js'))['OrbitControls'];
 type ThreeGlobeCtor = (typeof import('three-globe'))['default'];
@@ -405,7 +408,7 @@ async function initGlobe() {
   // Get visited countries data (all entries are visited now)
   const visitedEntries = travelData;
   const visitedCountryCodes = new Set(visitedEntries.filter(entry => entry.isVisited).map(entry => entry.countryCode));
-  const visitedCountryFeatures = await fetch(`${import.meta.env.BASE_URL}assets/globe/countries.geojson`)
+  const visitedCountryFeatures = await fetch(`${BASE_URL}assets/globe/countries.geojson`)
     .then(response => response.ok ? response.json() : null)
     .then(data => {
       const features = Array.isArray(data?.features) ? data.features : [];
@@ -414,8 +417,8 @@ async function initGlobe() {
     .catch(() => []);
 
   const globe = new ThreeGlobe()
-    .globeImageUrl(`${import.meta.env.BASE_URL}assets/globe/earth-blue-marble.jpg`)
-    .bumpImageUrl(`${import.meta.env.BASE_URL}assets/globe/earth-topology.png`)
+    .globeImageUrl(`${BASE_URL}assets/globe/earth-blue-marble.jpg`)
+    .bumpImageUrl(`${BASE_URL}assets/globe/earth-topology.png`)
     .showAtmosphere(true)
     .atmosphereColor('#41ff8a')
     .atmosphereAltitude(0.18)
