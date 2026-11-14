@@ -405,7 +405,7 @@ async function initGlobe() {
   // Get visited countries data (all entries are visited now)
   const visitedEntries = travelData;
   const visitedCountryCodes = new Set(visitedEntries.filter(entry => entry.isVisited).map(entry => entry.countryCode));
-  const visitedCountryFeatures = await fetch('/assets/globe/countries.geojson')
+  const visitedCountryFeatures = await fetch(`${import.meta.env.BASE_URL}assets/globe/countries.geojson`)
     .then(response => response.ok ? response.json() : null)
     .then(data => {
       const features = Array.isArray(data?.features) ? data.features : [];
@@ -414,8 +414,8 @@ async function initGlobe() {
     .catch(() => []);
 
   const globe = new ThreeGlobe()
-    .globeImageUrl('/assets/globe/earth-blue-marble.jpg')
-    .bumpImageUrl('/assets/globe/earth-topology.png')
+    .globeImageUrl(`${import.meta.env.BASE_URL}assets/globe/earth-blue-marble.jpg`)
+    .bumpImageUrl(`${import.meta.env.BASE_URL}assets/globe/earth-topology.png`)
     .showAtmosphere(true)
     .atmosphereColor('#41ff8a')
     .atmosphereAltitude(0.18)
