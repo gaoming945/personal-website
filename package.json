@@ -4,10 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "astro dev --host 0.0.0.0",
-    "dev:api": "node api/server.mjs",
-    "build": "astro check && astro build",
-    "preview": "astro preview --host 0.0.0.0"
+    "dev": "astro dev --config astro.config.pages.mjs --host 0.0.0.0",
+    "build": "astro check --config astro.config.pages.mjs && astro build --config astro.config.pages.mjs",
+    "preview": "astro preview --config astro.config.pages.mjs --host 0.0.0.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
