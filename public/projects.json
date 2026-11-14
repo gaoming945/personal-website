@@ -2,15 +2,36 @@
   {
     "id": "market-watch",
     "name": "美股跨资产宏观风控引擎",
-    "summary": "美股跨资产宏观风控引擎，把监控、信号和风险状态组织成可操作视图。",
+    "summary": "监控 QQQ / TQQQ / SOXX / SOXL，把宏观信号、规则判断和风险状态组织成可操作视图。",
     "category": "data",
     "kicker": "数据工具",
     "status": "在线运行",
     "techStack": [
       "Python",
-      "Streamlit"
+      "Streamlit",
+      "Finance"
     ],
+    "githubUrl": "https://github.com/gaoming945/market_watch_streamlit",
+    "projectUrl": "http://yadan.duckdns.org:8501/",
     "order": 1,
+    "visible": true
+  },
+  {
+    "id": "fund-valuation-system",
+    "name": "Fund Valuation System",
+    "summary": "基金实时估值服务：整合公开净值、持仓、行情、汇率和申购限额，并计算个人持仓盈亏，覆盖美股 / 港股 / A 股。",
+    "category": "data",
+    "kicker": "基金估值",
+    "status": "在线运行",
+    "techStack": [
+      "Node.js",
+      "Docker",
+      "WeChat Mini Program",
+      "Self-hosted"
+    ],
+    "githubUrl": "https://github.com/gaoming945/fund-valuation-system",
+    "projectUrl": "http://yadan.duckdns.org:19090/",
+    "order": 2,
     "visible": true
   }
 ]
