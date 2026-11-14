@@ -13,7 +13,7 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
       content="咸鸭蛋 的个人实验室，展示 Android、游戏系统、自动化、Docker 与数据产品项目。"
     />
     <title>咸鸭蛋 // 实验室</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href={`${import.meta.env.BASE_URL}favicon.svg`} type="image/svg+xml" />
     <script>
       (() => {
         try {
@@ -162,7 +162,7 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
             <h3>格阵</h3>
             <p data-i18n="project.grid.copy.short">格子解谜游戏，融合推箱子与磁力箱机制。</p>
           </div>
-          <img src="/assets/qrcodes/grid.png" alt="格阵 App 分发二维码" width="132" height="132" />
+          <img src={`${import.meta.env.BASE_URL}assets/qrcodes/grid.png`} alt="格阵 App 分发二维码" width="132" height="132" />
         </article>
         <article class="mobile-app-card">
           <div>
@@ -170,7 +170,7 @@ import PhotoGallery from '../components/PhotoGallery.tsx';
             <h3>星穹防线</h3>
             <p data-i18n="project.defense.copy.short">Cocos Creator 纵版空战射击游戏。</p>
           </div>
-          <img src="/assets/qrcodes/starfrontier.png" alt="星穹防线 App 分发二维码" width="132" height="132" />
+          <img src={`${import.meta.env.BASE_URL}assets/qrcodes/starfrontier.png`} alt="星穹防线 App 分发二维码" width="132" height="132" />
         </article>
       </section>
 
