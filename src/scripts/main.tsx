@@ -66,7 +66,67 @@ interface ManagedProject {
   visible?: boolean;
 }
 
-let projectData: ManagedProject[] = [];
+const fallbackProjectData: ManagedProject[] = [
+  {
+    id: 'grid',
+    name: 'Grid',
+    summary: '格子解谜游戏，融合推箱子与磁力箱机制，用 Compose 做出清晰的移动端交互。',
+    shortSummary: '格子解谜游戏，融合推箱子与磁力箱机制。',
+    category: 'mobile game',
+    kicker: '移动端游戏',
+    status: '已发布',
+    techStack: ['Kotlin', 'Jetpack Compose', 'Android'],
+    githubUrl: 'https://github.com/gaoming945/Grid',
+    distributionName: '格阵',
+    distributionImage: '/assets/qrcodes/grid.png',
+    order: 1,
+    visible: true,
+  },
+  {
+    id: 'defense-survivor',
+    name: 'Defense Survivor',
+    summary: 'Cocos Creator 纵版空战射击游戏，关注节奏、弹幕密度和成长反馈。',
+    shortSummary: 'Cocos Creator 纵版空战射击游戏。',
+    category: 'game',
+    kicker: '玩法原型',
+    status: '可试玩',
+    techStack: ['TypeScript', 'Cocos Creator', 'Gameplay'],
+    githubUrl: 'https://github.com/gaoming945/DefenseSurvivor',
+    distributionName: '星穹防线',
+    distributionImage: '/assets/qrcodes/starfrontier.png',
+    order: 2,
+    visible: true,
+  },
+  {
+    id: 'market-watch-streamlit',
+    name: 'Market Watch Streamlit',
+    summary: '美股跨资产宏观风控引擎，把监控、信号和风险状态组织成可操作视图。',
+    shortSummary: '美股跨资产宏观风控引擎。',
+    category: 'data',
+    kicker: '数据工具',
+    status: '在线运行',
+    techStack: ['Python', 'Streamlit', 'Finance'],
+    githubUrl: 'https://github.com/gaoming945/market_watch_streamlit',
+    projectUrl: 'http://yadan.duckdns.org:8501/',
+    order: 3,
+    visible: true,
+  },
+  {
+    id: 'fund-valuation-system',
+    name: 'Fund Valuation System',
+    summary: '美股基金估值系统，部署在软路由 Docker 环境里，用于查看基金估值、运行状态和自托管数据服务。',
+    shortSummary: '美股基金估值系统，部署在软路由里在线运行。',
+    category: 'data',
+    kicker: '基金估值',
+    status: '在线运行',
+    techStack: ['Python', 'Finance', 'Docker', 'Self-hosted'],
+    projectUrl: 'http://yadan.duckdns.org:19090/',
+    order: 4,
+    visible: true,
+  },
+];
+
+let projectData: ManagedProject[] = fallbackProjectData;
 
 function getTravelEntryById(id: string): TravelEntry | undefined {
   return [...travelData, ...wishlistData].find(entry => entry.id === id);
@@ -91,25 +151,31 @@ async function loadGlobeRuntime() {
 }
 
 const travelCopy: Record<string, { country: string; city: string; story?: string }> = {
-  'usa-san-francisco-2026': {
-    country: 'United States',
-    city: 'San Francisco',
-    story: 'San Francisco is a cultural and tech hub in California, famed for the Golden Gate Bridge, steep hills, and bay fog.',
-  },
   'usa-los-angeles-2026': {
     country: 'United States',
     city: 'Los Angeles',
-    story: 'Los Angeles is California\'s largest city, famed for Hollywood, sunny beaches, and diverse neighborhoods.',
+    story: 'Visited Los Angeles and San Francisco during the USA trip from September 24 to October 6, 2026. This entry records the Los Angeles stop; the dates cover the entire trip.',
   },
+  'usa-san-francisco-2026': {
+    country: 'United States',
+    city: 'San Francisco',
+    story: 'Visited Los Angeles and San Francisco during the USA trip from September 24 to October 6, 2026. This entry records the San Francisco stop; the dates cover the entire trip.',
+  },
+  'wishlist-maldives': { country: 'Maldives', city: 'Malé' },
   'portugal-lisbon-2026': {
     country: 'Portugal',
     city: 'Lisbon',
-    story: 'Lisbon is the capital of Portugal, famed for its yellow trams, pastel de nata, and Atlantic light.',
+    story: 'Lisbon unfolds across seven hills, where yellow trams, colorful neighborhoods, and the Tagus River give the city a relaxed, bright rhythm.',
   },
-  'spain-seville-2026': {
+  'spain-madrid-2026': {
     country: 'Spain',
-    city: 'Seville',
-    story: 'Seville is the capital of Andalusia, famed for flamenco, its Gothic cathedral, and the Plaza de España.',
+    city: 'Madrid',
+    story: 'Madrid brings together historic neighborhoods, major museums, and lively city life, making it an important new stop on the Europe map.',
+  },
+  'spain-barcelona-2026': {
+    country: 'Spain',
+    city: 'Barcelona',
+    story: 'Barcelona brings together Gaudi architecture, the Mediterranean coast, and lively neighborhoods as another stop on this Spain trip.',
   },
   'indonesia-bali-2026': {
     country: 'Indonesia',
@@ -353,6 +419,8 @@ function renderManagedProjects() {
       </article>`;
     })
     .join('');
+
+  updateProjectCarousel();
 }
 
 function initProjectFilters() {
@@ -363,10 +431,65 @@ function initProjectFilters() {
       card.classList.toggle('is-hidden', filter !== 'all' && !category.split(/\s+/).includes(filter));
     });
     buttons.forEach(button => button.classList.toggle('is-active', button.dataset.filter === filter));
+    const grid = document.querySelector('.project-grid') as HTMLElement | null;
+    if (grid) {
+      grid.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+    updateProjectCarousel();
   };
   buttons.forEach(button => {
     button.addEventListener('click', () => applyFilter(button.dataset.filter || 'all'));
   });
+}
+
+function visibleProjectCards() {
+  return Array.from(document.querySelectorAll('.project-card:not(.is-hidden)')) as HTMLElement[];
+}
+
+function updateProjectCarousel() {
+  const carousel = document.querySelector('[data-project-carousel]') as HTMLElement | null;
+  const grid = document.querySelector('.project-grid') as HTMLElement | null;
+  const prev = document.querySelector('[data-project-prev]') as HTMLButtonElement | null;
+  const next = document.querySelector('[data-project-next]') as HTMLButtonElement | null;
+  if (!carousel || !grid || !prev || !next) return;
+
+  const cards = visibleProjectCards();
+  const needsCarousel = cards.length > 3;
+  carousel.classList.toggle('has-overflow', needsCarousel);
+  prev.hidden = !needsCarousel;
+  next.hidden = !needsCarousel;
+
+  if (!needsCarousel) {
+    prev.disabled = true;
+    next.disabled = true;
+    return;
+  }
+
+  const maxScroll = Math.max(0, grid.scrollWidth - grid.clientWidth - 1);
+  prev.disabled = grid.scrollLeft <= 1;
+  next.disabled = grid.scrollLeft >= maxScroll;
+}
+
+function initProjectCarousel() {
+  const grid = document.querySelector('.project-grid') as HTMLElement | null;
+  const prev = document.querySelector('[data-project-prev]') as HTMLButtonElement | null;
+  const next = document.querySelector('[data-project-next]') as HTMLButtonElement | null;
+  if (!grid || !prev || !next) return;
+
+  const scrollByPage = (direction: -1 | 1) => {
+    const visibleCard = visibleProjectCards()[0];
+    const fallbackStep = grid.clientWidth;
+    const styles = window.getComputedStyle(grid);
+    const gap = Number.parseFloat(styles.columnGap || styles.gap || '0') || 0;
+    const cardStep = visibleCard ? visibleCard.getBoundingClientRect().width + gap : fallbackStep;
+    grid.scrollBy({ left: direction * Math.max(cardStep, 1), behavior: 'smooth' });
+  };
+
+  prev.addEventListener('click', () => scrollByPage(-1));
+  next.addEventListener('click', () => scrollByPage(1));
+  grid.addEventListener('scroll', () => window.requestAnimationFrame(updateProjectCarousel), { passive: true });
+  window.addEventListener('resize', updateProjectCarousel);
+  updateProjectCarousel();
 }
 
 function formatTravelDate(dateStr: string) {
@@ -500,7 +623,7 @@ async function initGlobe() {
         '伦敦': 'London',
         '巴厘岛': 'Bali'
       };
-      return cityMap[d.city] || d.city;
+      return travelCopy[d.id]?.city || cityMap[d.city] || d.city;
     })
     .labelSize(0.8)
     .labelColor(() => '#ffffff')
@@ -696,7 +819,7 @@ function initTimelineTabs(container: HTMLElement) {
     <div class="timeline-tools">
       <div class="timeline-tabs">
         <button type="button" class="timeline-tab is-active" data-tab="visited">${t('travel.tab.visited')} (${travelData.filter(e => e.isVisited).length})</button>
-        <button type="button" class="timeline-tab" data-tab="wishlist">${t('travel.tab.wishlist')} (${wishlistData.filter(e => ['IN', 'PW', 'MX', 'NZ', 'VN'].includes(e.countryCode)).length})</button>
+        <button type="button" class="timeline-tab" data-tab="wishlist">${t('travel.tab.wishlist')} (${wishlistData.filter(e => ['MV', 'IN', 'PW', 'MX', 'NZ', 'VN'].includes(e.countryCode)).length})</button>
       </div>
       <div class="timeline-controls" data-timeline-controls></div>
     </div>
@@ -728,7 +851,7 @@ function renderTimelineItems(container: HTMLElement) {
 
   const filtered = state.activeTab === 'visited'
     ? travelData.filter(e => e.isVisited)
-    : wishlistData.filter(e => ['IN', 'PW', 'MX', 'NZ', 'VN'].includes(e.countryCode));
+    : wishlistData.filter(e => ['MV', 'IN', 'PW', 'MX', 'NZ', 'VN'].includes(e.countryCode));
 
   if (filtered.length === 0) return;
 
@@ -762,7 +885,8 @@ function renderVisitedTimeline(container: HTMLElement, data: TravelEntry[]) {
     slide.className = 'swiper-slide timeline-item';
     slide.dataset.travelId = entries[0].id;
 
-    const formattedDate = formatTravelDate(entries[0].startDate);
+    const formattedDate = formatTravelDate(entries[0].startDate)
+      + (entries[0].endDate !== entries[0].startDate ? ' → ' + formatTravelDate(entries[0].endDate) : '');
 
     // Get unique flags for this date
     const flags = [...new Set(entries.map(entry => entry.flag))].join(' ');
@@ -1048,150 +1172,36 @@ function initBackgroundEffects() {
 
 // ==================== Mouse Effects ====================
 
-interface MouseParticle {
-  element: HTMLElement;
-  x: number;
-  y: number;
-  vx: number;
-  vy: number;
-  life: number;
-  maxLife: number;
-  size: number;
-}
-
-let mouseParticles: MouseParticle[] = [];
-let mouseX = 0;
-let mouseY = 0;
-let lastMouseX = 0;
-let lastMouseY = 0;
-let particleContainer: HTMLElement | null = null;
-let cursorDot: HTMLElement | null = null;
+let cursorGlow: HTMLElement | null = null;
+let cursorGlowFrame = 0;
+let cursorGlowX = 0;
+let cursorGlowY = 0;
 
 function initMouseEffects() {
   if (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     return;
   }
 
-  // Create particle container
-  particleContainer = document.createElement('div');
-  particleContainer.className = 'mouse-particles';
-  document.body.appendChild(particleContainer);
+  cursorGlow = document.createElement('div');
+  cursorGlow.className = 'cursor-glow';
+  document.body.appendChild(cursorGlow);
 
-  // Create cursor dot
-  cursorDot = document.createElement('div');
-  cursorDot.className = 'cursor-dot';
-  document.body.appendChild(cursorDot);
+  document.addEventListener('mousemove', event => {
+    cursorGlowX = event.clientX;
+    cursorGlowY = event.clientY;
 
-  // Mouse move handler
-  document.addEventListener('mousemove', (e) => {
-    mouseX = e.clientX;
-    mouseY = e.clientY;
+    if (cursorGlowFrame) return;
+    cursorGlowFrame = window.requestAnimationFrame(() => {
+      cursorGlowFrame = 0;
+      cursorGlow?.style.setProperty('--cursor-x', `${cursorGlowX}px`);
+      cursorGlow?.style.setProperty('--cursor-y', `${cursorGlowY}px`);
+      cursorGlow?.classList.add('is-active');
+    });
+  }, { passive: true });
 
-    // Calculate movement distance
-    const dx = mouseX - lastMouseX;
-    const dy = mouseY - lastMouseY;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    // Spawn particles based on movement
-    if (distance > 2) {
-      const particleCount = Math.min(Math.floor(distance / 4), 3);
-      for (let i = 0; i < particleCount; i++) {
-        spawnParticle(mouseX, mouseY);
-      }
-    }
-
-    lastMouseX = mouseX;
-    lastMouseY = mouseY;
+  document.addEventListener('mouseleave', () => {
+    cursorGlow?.classList.remove('is-active');
   });
-
-  // Animation loop
-  function animateParticles() {
-    // Update cursor dot position
-    if (cursorDot) {
-      cursorDot.style.left = mouseX + 'px';
-      cursorDot.style.top = mouseY + 'px';
-    }
-
-    // Update particles
-    for (let i = mouseParticles.length - 1; i >= 0; i--) {
-      const p = mouseParticles[i];
-      
-      // Update position
-      p.x += p.vx;
-      p.y += p.vy;
-      
-      // Apply gravity and friction
-      p.vy += 0.15; // gravity
-      p.vx *= 0.98; // friction
-      p.vy *= 0.98;
-      
-      // Decrease life
-      p.life -= 1;
-      
-      // Update element
-      const opacity = p.life / p.maxLife;
-      const scale = opacity * 0.8 + 0.2;
-      p.element.style.left = p.x + 'px';
-      p.element.style.top = p.y + 'px';
-      p.element.style.opacity = opacity.toString();
-      p.element.style.transform = `translate(-50%, -50%) scale(${scale})`;
-      
-      // Remove dead particles
-      if (p.life <= 0) {
-        p.element.remove();
-        mouseParticles.splice(i, 1);
-      }
-    }
-
-    requestAnimationFrame(animateParticles);
-  }
-  animateParticles();
-}
-
-function spawnParticle(x: number, y: number) {
-  if (!particleContainer) return;
-
-  const particle = document.createElement('div');
-  particle.className = 'mouse-particle';
-  
-  // Random size variation
-  const size = 4 + Math.random() * 4;
-  particle.style.width = size + 'px';
-  particle.style.height = size + 'px';
-  
-  // Random color between green and cyan
-  const hue = 140 + Math.random() * 40; // 140 (green) to 180 (cyan)
-  particle.style.background = `radial-gradient(circle, hsla(${hue}, 100%, 65%, 0.9) 0%, hsla(${hue}, 100%, 55%, 0.6) 50%, transparent 100%)`;
-  particle.style.boxShadow = `0 0 ${size * 2}px hsla(${hue}, 100%, 60%, 0.6), 0 0 ${size * 4}px hsla(${hue}, 100%, 50%, 0.3)`;
-  
-  particleContainer.appendChild(particle);
-
-  // Random velocity
-  const angle = Math.random() * Math.PI * 2;
-  const speed = 1 + Math.random() * 2;
-  const vx = Math.cos(angle) * speed;
-  const vy = Math.sin(angle) * speed - 1; // slight upward bias
-
-  const maxLife = 30 + Math.random() * 20;
-
-  mouseParticles.push({
-    element: particle,
-    x: x,
-    y: y,
-    vx: vx,
-    vy: vy,
-    life: maxLife,
-    maxLife: maxLife,
-    size: size
-  });
-
-  // Limit particle count
-  if (mouseParticles.length > 50) {
-    const oldest = mouseParticles.shift();
-    if (oldest) {
-      oldest.element.remove();
-    }
-  }
 }
 
 // ==================== Travel Lightbox ====================
@@ -1507,7 +1517,7 @@ function refreshTravelLanguage() {
   }
 
   if (wishlistTab) {
-    wishlistTab.textContent = `${t('travel.tab.wishlist')} (${wishlistData.filter(e => ['IN', 'PW', 'MX', 'NZ', 'VN'].includes(e.countryCode)).length})`;
+    wishlistTab.textContent = `${t('travel.tab.wishlist')} (${wishlistData.filter(e => ['MV', 'IN', 'PW', 'MX', 'NZ', 'VN'].includes(e.countryCode)).length})`;
   }
 
   if (timelineContainer) {
@@ -1612,331 +1622,11 @@ function initActiveNavigation() {
   window.addEventListener('resize', requestUpdate);
 }
 
-function initAiChat() {
-  const root = document.querySelector('[data-ai-chat]') as HTMLElement | null;
-  const trigger = document.querySelector('[data-ai-chat-trigger]') as HTMLButtonElement | null;
-  const panel = document.querySelector('[data-ai-chat-panel]') as HTMLElement | null;
-  const closeButton = document.querySelector('[data-ai-chat-close]') as HTMLButtonElement | null;
-  const form = document.querySelector('[data-ai-chat-form]') as HTMLFormElement | null;
-  const input = document.querySelector('[data-ai-chat-input]') as HTMLTextAreaElement | null;
-  const submit = document.querySelector('[data-ai-chat-submit]') as HTMLButtonElement | null;
-  const messages = document.querySelector('[data-ai-chat-messages]') as HTMLElement | null;
-
-  if (!root || !trigger || !panel || !form || !input || !submit || !messages) return;
-
-  const setOpen = (open: boolean) => {
-    root.classList.toggle('is-open', open);
-    trigger.setAttribute('aria-expanded', String(open));
-    panel.setAttribute('aria-hidden', String(!open));
-    if (open) {
-      window.setTimeout(() => input.focus(), 120);
-    }
-  };
-
-  const escapeHtml = (value: string) =>
-    value
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-
-  const renderInlineMarkdown = (value: string) => {
-    let output = escapeHtml(value);
-    output = output.replace(/`([^`]+)`/g, '<code>$1</code>');
-    output = output.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-    output = output.replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    return output;
-  };
-
-  const isMarkdownTableDivider = (line: string) =>
-    /^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$/.test(line);
-
-  const splitMarkdownTableRow = (line: string) =>
-    line
-      .trim()
-      .replace(/^\|/, '')
-      .replace(/\|$/, '')
-      .split('|')
-      .map(cell => cell.trim());
-
-  const renderMarkdown = (value: string) => {
-    const normalized = value.replace(/\r\n/g, '\n').trim();
-    if (!normalized) return '';
-
-    const lines = normalized.split('\n');
-    const blocks: string[] = [];
-
-    for (let index = 0; index < lines.length;) {
-      const line = lines[index];
-      const nextLine = lines[index + 1];
-
-      if (!line.trim()) {
-        index += 1;
-        continue;
-      }
-
-      if (line.includes('|') && nextLine && isMarkdownTableDivider(nextLine)) {
-        const headers = splitMarkdownTableRow(line);
-        const rows: string[][] = [];
-        index += 2;
-        while (index < lines.length && lines[index].includes('|') && lines[index].trim()) {
-          rows.push(splitMarkdownTableRow(lines[index]));
-          index += 1;
-        }
-
-        const head = headers.map(header => `<th>${renderInlineMarkdown(header)}</th>`).join('');
-        const body = rows
-          .map(row => `<tr>${headers.map((_, cellIndex) => `<td>${renderInlineMarkdown(row[cellIndex] || '')}</td>`).join('')}</tr>`)
-          .join('');
-        blocks.push(`<div class="ai-markdown-table-wrap"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`);
-        continue;
-      }
-
-      if (/^\s*[-*]\s+/.test(line)) {
-        const items: string[] = [];
-        while (index < lines.length && /^\s*[-*]\s+/.test(lines[index])) {
-          items.push(`<li>${renderInlineMarkdown(lines[index].replace(/^\s*[-*]\s+/, ''))}</li>`);
-          index += 1;
-        }
-        blocks.push(`<ul>${items.join('')}</ul>`);
-        continue;
-      }
-
-      if (/^\s*\d+\.\s+/.test(line)) {
-        const items: string[] = [];
-        while (index < lines.length && /^\s*\d+\.\s+/.test(lines[index])) {
-          items.push(`<li>${renderInlineMarkdown(lines[index].replace(/^\s*\d+\.\s+/, ''))}</li>`);
-          index += 1;
-        }
-        blocks.push(`<ol>${items.join('')}</ol>`);
-        continue;
-      }
-
-      const paragraphLines: string[] = [];
-      while (
-        index < lines.length &&
-        lines[index].trim() &&
-        !(lines[index].includes('|') && lines[index + 1] && isMarkdownTableDivider(lines[index + 1])) &&
-        !/^\s*[-*]\s+/.test(lines[index]) &&
-        !/^\s*\d+\.\s+/.test(lines[index])
-      ) {
-        paragraphLines.push(lines[index]);
-        index += 1;
-      }
-      blocks.push(`<p>${paragraphLines.map(renderInlineMarkdown).join('<br>')}</p>`);
-    }
-
-    return blocks.join('');
-  };
-
-  const setMessageMarkdown = (article: HTMLElement, text: string) => {
-    const body = article.querySelector('[data-ai-message-body]') as HTMLElement | null;
-    if (!body) return;
-    body.innerHTML = renderMarkdown(text);
-  };
-
-  const appendMessage = (role: 'user' | 'assistant' | 'error', text: string) => {
-    const article = document.createElement('article');
-    article.className = `ai-message ${role === 'user' ? 'ai-message-user' : 'ai-message-assistant'}${role === 'error' ? ' ai-message-error' : ''}`;
-    const body = document.createElement('div');
-    body.className = 'ai-message-body';
-    body.dataset.aiMessageBody = '';
-    article.appendChild(body);
-    messages.appendChild(article);
-    setMessageMarkdown(article, text);
-    messages.scrollTop = messages.scrollHeight;
-    return article;
-  };
-
-  const resizeInput = () => {
-    input.style.height = 'auto';
-    input.style.height = `${Math.min(input.scrollHeight, 120)}px`;
-  };
-
-  const chatEndpoints = () => {
-    const endpoints = ['/api/chat'];
-    if (['localhost', '127.0.0.1'].includes(window.location.hostname)) {
-      endpoints.push('http://localhost:8787/api/chat');
-    }
-    return endpoints;
-  };
-
-  const ask = async (rawQuestion: string) => {
-    const question = rawQuestion.trim();
-    if (!question) return;
-
-    appendMessage('user', question);
-    input.value = '';
-    resizeInput();
-    submit.disabled = true;
-
-    const pending = appendMessage('assistant', t('ai.thinking'));
-    pending.classList.add('is-streaming');
-
-    try {
-      let response: Response | null = null;
-      let lastError: unknown = null;
-      const body = JSON.stringify({
-        message: question,
-        language: currentLanguage,
-      });
-
-      for (const endpoint of chatEndpoints()) {
-        try {
-          response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body,
-          });
-          if (response.ok) break;
-          lastError = new Error(`AI request failed: ${response.status}`);
-        } catch (error) {
-          lastError = error;
-        }
-      }
-
-      if (!response?.ok) {
-        throw lastError || new Error('AI request failed');
-      }
-
-      const pendingText = pending.querySelector('[data-ai-message-body]') as HTMLElement;
-      const contentType = response.headers.get('Content-Type') || '';
-
-      if (contentType.includes('application/json')) {
-        const data = await response.json();
-        setMessageMarkdown(pending, typeof data.reply === 'string' ? data.reply : t('ai.error'));
-      } else if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let streamedText = '';
-        pendingText.innerHTML = '';
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          streamedText += decoder.decode(value, { stream: true });
-          setMessageMarkdown(pending, streamedText);
-          messages.scrollTop = messages.scrollHeight;
-        }
-
-        streamedText += decoder.decode();
-        setMessageMarkdown(pending, streamedText || t('ai.error'));
-      } else {
-        setMessageMarkdown(pending, await response.text());
-      }
-    } catch {
-      pending.classList.add('ai-message-error');
-      setMessageMarkdown(pending, t('ai.error'));
-    } finally {
-      pending.classList.remove('is-streaming');
-      submit.disabled = false;
-      messages.scrollTop = messages.scrollHeight;
-    }
-  };
-
-  trigger.addEventListener('click', () => setOpen(!root.classList.contains('is-open')));
-  closeButton?.addEventListener('click', () => setOpen(false));
-
-  input.addEventListener('input', resizeInput);
-  input.addEventListener('keydown', event => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      form.requestSubmit();
-    }
-  });
-
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    ask(input.value);
-  });
-
-  document.querySelectorAll('[data-ai-question]').forEach(button => {
-    button.addEventListener('click', () => {
-      const question = (button as HTMLElement).innerText || button.getAttribute('data-ai-question') || '';
-      setOpen(true);
-      ask(question);
-    });
-  });
-
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && root.classList.contains('is-open')) {
-      setOpen(false);
-    }
-  });
-}
-
-function initGatewayPanel() {
-  const form = document.querySelector('[data-gateway-form]') as HTMLFormElement | null;
-  const submit = document.querySelector('[data-gateway-submit]') as HTMLButtonElement | null;
-  const status = document.querySelector('[data-gateway-status]') as HTMLElement | null;
-  const result = document.querySelector('[data-gateway-result]') as HTMLElement | null;
-  const keyOutput = document.querySelector('[data-gateway-key]') as HTMLElement | null;
-  const copyButton = document.querySelector('[data-gateway-copy]') as HTMLButtonElement | null;
-
-  if (!form || !submit || !status || !result || !keyOutput || !copyButton) return;
-
-  let issuedKey = '';
-
-  const setStatus = (message: string, isError = false) => {
-    status.textContent = message;
-    status.classList.toggle('is-error', isError);
-  };
-
-  form.addEventListener('submit', async event => {
-    event.preventDefault();
-    const formData = new FormData(form);
-    const inviteCode = String(formData.get('inviteCode') || '').trim();
-    const label = String(formData.get('label') || '').trim();
-
-    if (!inviteCode) {
-      setStatus('请输入邀请码。', true);
-      return;
-    }
-
-    submit.disabled = true;
-    setStatus('正在兑换...');
-    result.hidden = true;
-    issuedKey = '';
-
-    try {
-      const response = await fetch('/api/gateway/redeem', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inviteCode, label }),
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload.error || '兑换失败');
-      }
-
-      issuedKey = payload.apiKey;
-      keyOutput.textContent = issuedKey;
-      result.hidden = false;
-      form.reset();
-      setStatus(`兑换成功。今日额度：${payload.key.dailyRequests} 次 / ${payload.key.dailyTokens} tokens。`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : '兑换失败', true);
-    } finally {
-      submit.disabled = false;
-    }
-  });
-
-  copyButton.addEventListener('click', async () => {
-    if (!issuedKey) return;
-    try {
-      await navigator.clipboard.writeText(issuedKey);
-      setStatus('Key 已复制。注意：页面刷新后不会再显示。');
-    } catch {
-      setStatus('复制失败，请手动复制。', true);
-    }
-  });
-}
-
 document.addEventListener('DOMContentLoaded', async () => {
   currentLanguage = getStoredLanguage();
   await loadManagedContent();
   renderManagedProjects();
+  initProjectCarousel();
   initProjectFilters();
   initTimeline();
   initDetailPanel();
@@ -1947,7 +1637,5 @@ document.addEventListener('DOMContentLoaded', async () => {
   initThemeToggle();
   initLanguageToggle();
   initActiveNavigation();
-  initAiChat();
-  initGatewayPanel();
   initGlobeWhenVisible();
 });

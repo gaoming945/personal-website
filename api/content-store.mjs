@@ -150,6 +150,25 @@ function seedProjects() {
       createdAt: nowIso(),
       updatedAt: nowIso(),
     },
+    {
+      id: 'fund-valuation-system',
+      name: 'Fund Valuation System',
+      summary: '美股基金估值系统，部署在软路由 Docker 环境里，用于查看基金估值、运行状态和自托管数据服务。',
+      shortSummary: '美股基金估值系统，部署在软路由里在线运行。',
+      category: 'data',
+      kicker: '基金估值',
+      status: '在线运行',
+      techStack: ['Python', 'Finance', 'Docker', 'Self-hosted'],
+      coverImage: '',
+      githubUrl: '',
+      projectUrl: 'http://yadan.duckdns.org:19090/',
+      distributionName: '',
+      distributionImage: '',
+      order: 4,
+      visible: true,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    },
   ];
 }
 
@@ -255,6 +274,14 @@ export class ContentStore {
         projects: Array.isArray(parsed.projects) ? parsed.projects.map(normalizeProject) : [],
         fitness: Array.isArray(parsed.fitness) ? parsed.fitness.map(normalizeFitness) : [],
       };
+      const projectIds = new Set(this.state.projects.map(project => project.id));
+      const missingSeedProjects = seedProjects()
+        .map(normalizeProject)
+        .filter(project => !projectIds.has(project.id));
+      if (missingSeedProjects.length > 0) {
+        this.state.projects.push(...missingSeedProjects);
+        this.save();
+      }
     } catch {
       this.state = this.seedState();
       this.save();

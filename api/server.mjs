@@ -42,7 +42,7 @@ const MAX_INPUT_LENGTH = 600;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 18;
 const GATEWAY_ADMIN_TOKEN = process.env.GATEWAY_ADMIN_TOKEN || '';
-const GATEWAY_DATA_DIR = process.env.GATEWAY_DATA_DIR || '/data';
+const GATEWAY_DATA_DIR = process.env.GATEWAY_DATA_DIR || (process.env.NODE_ENV === 'production' ? '/data' : '.data');
 const GATEWAY_MAX_BODY_BYTES = Number(process.env.GATEWAY_MAX_BODY_BYTES || 64 * 1024);
 const GATEWAY_MAX_TOKENS = Number(process.env.GATEWAY_MAX_TOKENS || 2000);
 const UPLOAD_ROOT = process.env.UPLOAD_ROOT || `${GATEWAY_DATA_DIR}/uploads`;
