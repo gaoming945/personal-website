@@ -98,7 +98,7 @@ export const translations: Record<Language, TranslationDictionary> = {
     'stack.automation': '自动化运维',
     'stack.level': '关卡机制',
     'stack.prototype': '原型循环',
-    footer: '基于 Astro 构建 · 容器化部署 · 持续迭代中'
+    footer: '基于 Astro 构建 · GitHub Pages 部署 · 持续迭代中'
   },
   en: {
     documentTitle: '咸鸭蛋 // Lab',
@@ -196,6 +196,6 @@ export const translations: Record<Language, TranslationDictionary> = {
     'stack.automation': 'Automation Ops',
     'stack.level': 'Level mechanics',
     'stack.prototype': 'Prototype loops',
-    footer: 'Built with Astro · Containerized deployment · Continuously iterating'
+    footer: 'Built with Astro · Deployed on GitHub Pages · Continuously iterating'
   }
 };
